@@ -23,8 +23,8 @@ variable "observer_type" {
   description = "Observer node type"
   default     = "lite"
   validation {
-    condition     = contains(["lite", "full"], var.observer_type)
-    error_message = "Valid value is one of the following: lite, full"
+    condition     = contains(["lite"], var.observer_type)
+    error_message = "Valid value is one of the following: lite"
   }
 }
 
