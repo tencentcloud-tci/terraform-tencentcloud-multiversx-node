@@ -24,6 +24,21 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
   zone          = var.az
 }
 
+resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
+  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
+
+  dynamic "firewall_rules" {
+    for_each = var.firewall_rules
+    content {
+      protocol                  = lookup(firewall_rules.value, "protocol", "TCP")
+      port                      = lookup(firewall_rules.value, "port", "80")
+      cidr_block                = lookup(firewall_rules.value, "cidr_block", "0.0.0.0/0")
+      action                    = lookup(firewall_rules.value, "action", "DROP")
+      firewall_rule_description = lookup(firewall_rules.value, "firewall_rule_description", "")
+    }
+  }
+}
+
 resource "tencentcloud_tat_invoker" "run" {
   name         = "start lite node"
   type         = "SCHEDULE"
@@ -37,4 +52,8 @@ resource "tencentcloud_tat_invoker" "run" {
     policy      = "ONCE"
     invoke_time = timeadd(timestamp(), "10s")
   }
+  depends_on = [
+    tencentcloud_lighthouse_instance.lighthouse,
+    tencentcloud_lighthouse_firewall_rule.firewall_rule
+  ]
 }

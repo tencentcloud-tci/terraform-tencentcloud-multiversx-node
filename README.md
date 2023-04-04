@@ -2,6 +2,8 @@
 
 Terraform module which deploys a MultiversX observer node on Tencentcloud. It uses lighthouse.
 
+Multiversx doc: https://github.com/multiversx/mx-chain-observing-squad#verify-the-running-containers
+
 ## Usage
 ```hcl
 module "observer" {
