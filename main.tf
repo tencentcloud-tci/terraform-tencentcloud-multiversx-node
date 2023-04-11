@@ -64,7 +64,7 @@ resource "tencentcloud_tat_invoker" "run" {
     observer_type = var.observer_type
     secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
     secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
-    lighthouse_id        = resource.tencentcloud_lighthouse_instance.lighthouse.id
+    lighthouse_id = resource.tencentcloud_lighthouse_instance.lighthouse.id
     cbs_0         = var.cbs["data_cbs"][0]
     cbs_1         = var.cbs["data_cbs"][1]
     cbs_2         = var.cbs["data_cbs"][2]

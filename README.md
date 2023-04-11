@@ -7,7 +7,7 @@ Multiversx doc: https://github.com/multiversx/mx-chain-observing-squad#verify-th
 ## Usage
 ```hcl
 module "observer" {
-  source        = "./modules/multiversx-observer"
+  source        = "git@github.com:ritch2022/terraform-tencentcloud-multiversx-lighthouse.git"
 
   az            = "eu-frankfurt-1"
 
