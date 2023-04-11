@@ -11,7 +11,7 @@ variable "az" {
 variable "deployment_mode" {
   type        = string
   description = "Deployment mode"
-  default     = "single"
+  default     = "squad"
   validation {
     condition     = contains(["squad", "single"], var.deployment_mode)
     error_message = "Valid value is one of the following: single, squad."
@@ -23,8 +23,8 @@ variable "observer_type" {
   description = "Observer node type"
   default     = "lite"
   validation {
-    condition     = contains(["lite"], var.observer_type)
-    error_message = "Valid value is one of the following: lite"
+    condition     = contains(["lite", "standard"], var.observer_type)
+    error_message = "Valid value is one of the following: lite, standard"
   }
 }
 
@@ -37,7 +37,7 @@ variable "bundle_id" {
 variable "blueprint_id" {
   type        = string
   description = "Lighthouse blueprint id"
-  default     = "lhbp-2rkazhl3"
+  default     = "lhbp-2rkazhl3" # docker-ubuntu20
 }
 
 variable "purchase_period" {
@@ -82,4 +82,20 @@ variable "firewall_rules" {
       "action"                    = "ACCEPT"
       "firewall_rule_description" = "ssh port"
   }]
+}
+
+variable "cbs" {
+  type = object({
+    data_cbs     = list(string)
+    floating_cbs = string
+  })
+  description = "CBS instances for deployment"
+  default = {
+    data_cbs     = ["", "", ""]
+    floating_cbs = ""
+  }
+  validation {
+    condition     = length(var.cbs["data_cbs"]) == 3
+    error_message = "Field data_cbs must have 3 CBS instances with fixed order: [node_0, node_1, node_2]"
+  }
 }
