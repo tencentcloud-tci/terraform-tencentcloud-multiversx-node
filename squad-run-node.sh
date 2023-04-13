@@ -190,7 +190,7 @@ init_dir_standard() {
     generate_key "$META_NODE_DIR/config" "observerKey_metachain.pem"
 
     echo "===== download data files ====="
-    local ex="tar"
+    local ex="tgz"
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
         wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-0.$ex -P $FLOAT_MOUNT_DIR
