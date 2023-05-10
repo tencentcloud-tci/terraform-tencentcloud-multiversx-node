@@ -99,4 +99,4 @@ This command is for daily operation.
 | `upgrade_all` | To check the docker image(multiversx/chain-observer, multiversx/chain-squad-proxy) latest tag. If there is a new tag, it will download and restart the node. |
 | `stop_all` | To stop the node's programs |
 | `start_all` | To start the node's programs |
-| `destroy` | To stop the node's programs, umount the working directory(for standard observer type) and remove it |
+| `destroy` | To stop the node's programs, umount the working directory(for db-lookup observer type) and remove it |
