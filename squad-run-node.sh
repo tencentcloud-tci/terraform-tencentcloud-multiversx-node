@@ -109,8 +109,8 @@ init_dir_lite() {
     generate_key "$META_NODE_DIR/config" "observerKey_metachain.pem"
 }
 
-init_env_standard() {
-    echo "===== init env standard ====="
+init_env_db-lookup() {
+    echo "===== init env db-lookup ====="
     echo "CVM_ID=$CVM_ID"
     echo "CBS_ID_0=$CBS_ID_0"
     echo "CBS_ID_1=$CBS_ID_1"
@@ -152,7 +152,7 @@ attach_and_mount() {
 }
 
 
-init_dir_standard() {
+init_dir_db-lookup() {
     CBS_0_DIR=$SQUAD_BASE_DIR/cbs-0
     CBS_1_DIR=$SQUAD_BASE_DIR/cbs-1
     CBS_2_DIR=$SQUAD_BASE_DIR/cbs-2
@@ -273,9 +273,9 @@ run_squad() {
     if [ "$1" == "lite" ]; then
         init_env_lite
         init_dir_lite
-    elif [ "$1" == "standard" ]; then
-        init_env_standard
-        init_dir_standard
+    elif [ "$1" == "db-lookup" ]; then
+        init_env_db-lookup
+        init_dir_db-lookup
     else
         echo "unsupported node type: $1"
         exit 1
@@ -312,7 +312,7 @@ run_squad() {
     # Write observer type
     echo "$1" > $OBSERVER_TYPE_FILE
     
-    if [ "$1" == "standard" ]; then
+    if [ "$1" == "db-lookup" ]; then
         cleanup
     fi
 }
@@ -320,7 +320,7 @@ run_squad() {
 # ------------------------------
 # main
 # ------------------------------
-# observer_type: lite, standard
+# observer_type: lite, db-lookup
 echo "===== deploy {{observer_type}} ====="
 pull_docker_images
 run_squad {{observer_type}}

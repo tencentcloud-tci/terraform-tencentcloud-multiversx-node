@@ -26,7 +26,7 @@ init() {
     KEY_GENERATOR=( [Image]="multiversx/chain-keygenerator" )
     PROXY=( [Image]="multiversx/chain-squad-proxy" [Dir]="$SQUAD_BASE_DIR/proxy" [IP]="10.0.0.2" [Shard]="proxy" )
 
-    if [ "$CURRENT_OBSERVER_TYPE" == "standard" ]; then
+    if [ "$CURRENT_OBSERVER_TYPE" == "db-lookup" ]; then
         CBS_0_DIR=$SQUAD_BASE_DIR/cbs-0
         CBS_1_DIR=$SQUAD_BASE_DIR/cbs-1
         CBS_2_DIR=$SQUAD_BASE_DIR/cbs-2
@@ -195,7 +195,7 @@ upgrade() {
 
 destroy() {
     stop_all
-    if [ "$CURRENT_OBSERVER_TYPE" == "standard" ]; then
+    if [ "$CURRENT_OBSERVER_TYPE" == "db-lookup" ]; then
         # umount
         umount $CBS_0_DIR && rm -rf $CBS_0_DIR
         umount $CBS_1_DIR && rm -rf $CBS_1_DIR
