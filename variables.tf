@@ -24,7 +24,7 @@ variable "observer_type" {
   default     = "lite"
   validation {
     condition     = contains(["lite", "db-lookup"], var.observer_type)
-    error_message = "Please choose one of the following node types: lite, db-lookup"
+    error_message = "Please choose one of the following node types: lite, db-lookup-hdd, db-lookup-ssd"
   }
 }
 
