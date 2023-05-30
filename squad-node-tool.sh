@@ -14,7 +14,7 @@ declare -A NODE_0 NODE_1 NODE_2 NODE_META KEY_GENERATOR PROXY
 init() {
 
     if [ ! -f $OBSERVER_TYPE_FILE ]; then
-        echo "fatal error: the node has not been deployed, pls do deployment firstly!"
+        echo "error: the node has not yet been deployed, plese deploy first"
         exit 1
     fi
     CURRENT_OBSERVER_TYPE=`cat $OBSERVER_TYPE_FILE`
