@@ -205,23 +205,18 @@ init_dir_db-lookup() {
         wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-metachain.$ex -P $FLOAT_MOUNT_DIR
     fi
 
-    # extract
-    # in parallel
-    echo "===== extract data files ====="
+    # extract block databases in parallel processes
+    echo "===== extract database files ====="
     if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
-        # 7za x $FLOAT_MOUNT_DIR/node-0.$ex -o$NODE_0_DIR &
         tar xf $FLOAT_MOUNT_DIR/node-0.$ex -C $NODE_0_DIR &
     fi
     if [[ ! -d $NODE_1_DIR/db/db/1/Static || ! -d $NODE_1_DIR/db/1/Static ]]; then
-        # 7za x $FLOAT_MOUNT_DIR/node-1.$ex -o$NODE_1_DIR &
         tar xf $FLOAT_MOUNT_DIR/node-1.$ex -C $NODE_1_DIR &
     fi
     if [[ ! -d $NODE_2_DIR/db/db/1/Static || ! -d $NODE_2_DIR/db/1/Static ]]; then
-        # 7za x $FLOAT_MOUNT_DIR/node-2.$ex -o$NODE_2_DIR &
         tar xf $FLOAT_MOUNT_DIR/node-2.$ex -C $NODE_2_DIR &
     fi
     if [[ ! -d $META_NODE_DIR/db/db/1/Static || ! -d $META_NODE_DIR/db/1/Static ]]; then
-        # 7za x $FLOAT_MOUNT_DIR/node-metachain.$ex -o$META_NODE_DIR &
         tar xf $FLOAT_MOUNT_DIR/node-metachain.$ex -C $META_NODE_DIR &
     fi
     wait
