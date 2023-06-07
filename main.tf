@@ -40,6 +40,7 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
   instance_name = var.instance_name
   zone          = var.az
 
+  # to wait for the TAT agent installation
   provisioner "local-exec" {
     command = "sleep 15"
   }
@@ -63,6 +64,7 @@ resource "tencentcloud_lighthouse_disk" "cbs-0" {
 # to make it possible to do terraform destroy, when destroy disk it must be dettached.
 # bad design here.
 resource "tencentcloud_lighthouse_disk_attachment" "attach-0" {
+  count       = local.need_cloud_disk
   disk_id     = tencentcloud_lighthouse_disk.cbs-0[0].id
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 }
@@ -82,6 +84,7 @@ resource "tencentcloud_lighthouse_disk" "cbs-1" {
 }
 
 resource "tencentcloud_lighthouse_disk_attachment" "attach-1" {
+  count       = local.need_cloud_disk
   disk_id     = tencentcloud_lighthouse_disk.cbs-1[0].id
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 }
@@ -101,6 +104,7 @@ resource "tencentcloud_lighthouse_disk" "cbs-2" {
 }
 
 resource "tencentcloud_lighthouse_disk_attachment" "attach-2" {
+  count       = local.need_cloud_disk
   disk_id     = tencentcloud_lighthouse_disk.cbs-2[0].id
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 }
@@ -126,7 +130,16 @@ resource "tencentcloud_tat_invoker" "run" {
   command_id   = tencentcloud_tat_command.node-runner.id
   instance_ids = [tencentcloud_lighthouse_instance.lighthouse.id, ]
   username     = "root"
-  parameters = jsonencode({
+  parameters = var.deployment_mode == "single" ? jsonencode({
+    observer_type = var.observer_type
+    secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
+    secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
+    lighthouse_id = resource.tencentcloud_lighthouse_instance.lighthouse.id
+    cbs_0         = ""
+    cbs_1         = ""
+    cbs_2         = ""
+    cbs_float     = ""
+    }) : jsonencode({
     observer_type = var.observer_type
     secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
     secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]

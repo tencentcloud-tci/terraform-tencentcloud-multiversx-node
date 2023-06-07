@@ -87,4 +87,5 @@ variable "firewall_rules" {
 variable "floating_cbs" {
   type        = string
   description = "CBS instance for deployment"
+  default     = ""
 }

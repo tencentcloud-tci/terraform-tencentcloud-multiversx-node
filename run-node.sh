@@ -5,15 +5,16 @@ KEY_FILE="validatorKey.pem"
 CONTAINER_NAME="multiversx_node"
 
 pull_docker_images() {
+    yum install -y -q jq
     local dhgenkey="https://registry.hub.docker.com/v2/repositories/multiversx/chain-keygenerator/tags"
     local dhmainnet="https://registry.hub.docker.com/v2/repositories/multiversx/chain-mainnet/tags"
     
     local latgenkey=`curl -s -S $dhgenkey | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
     local latmainnet=`curl -s -S $dhmainnet | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
 
-    docker pull multiversx/chain-keygenerator:$latgenkey
+    docker pull -q multiversx/chain-keygenerator:$latgenkey
     docker tag multiversx/chain-keygenerator:$latgenkey multiversx/chain-keygenerator:using
-    docker pull multiversx/chain-mainnet:$latmainnet
+    docker pull -q multiversx/chain-mainnet:$latmainnet
     docker tag multiversx/chain-mainnet:$latmainnet multiversx/chain-mainnet:using
 }
 
