@@ -21,16 +21,16 @@ pull_docker_images() {
     local dhobs="https://registry.hub.docker.com/v2/repositories/multiversx/chain-observer/tags"
     local dhpro="https://registry.hub.docker.com/v2/repositories/multiversx/chain-squad-proxy/tags"
     
-    yum install -y jq
+    yum install -y -q jq
     local latgenkey=`curl -s -S $dhgenkey | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
     local latobs=`curl -s -S $dhobs | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
     local latpro=`curl -s -S $dhpro | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
 
-    docker pull multiversx/chain-keygenerator:$latgenkey
+    docker pull -q multiversx/chain-keygenerator:$latgenkey
     docker tag multiversx/chain-keygenerator:$latgenkey multiversx/chain-keygenerator:using
-    docker pull multiversx/chain-observer:$latobs
+    docker pull -q multiversx/chain-observer:$latobs
     docker tag multiversx/chain-observer:$latobs multiversx/chain-observer:using
-    docker pull multiversx/chain-squad-proxy:$latpro
+    docker pull -q multiversx/chain-squad-proxy:$latpro
     docker tag multiversx/chain-squad-proxy:$latpro multiversx/chain-squad-proxy:using
 }
 
@@ -91,7 +91,7 @@ run() {
 }
 
 init_env_lite() {
-    yum install -y screen
+    yum install -y -q screen
 }
 
 init_dir_lite() {
@@ -118,10 +118,10 @@ init_env_db-lookup() {
     echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
     # install python p7zip
     # yum install -y https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm
-    yum install -y python3 p7zip.x86_64 screen
+    yum install -y -q python3 p7zip.x86_64 screen
 
     # install tccli
-    pip3 install tccli
+    pip3 install -q tccli
 }
 
 # input:
@@ -129,13 +129,17 @@ init_env_db-lookup() {
 #   $2: dir to mount
 attach_and_mount() {
     if [[ -z `df | grep $2` ]]; then
-        echo "===== attach $1 ====="
-        tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $CVM_ID
-        sleep 15
+        if [[ -n `ls -la /dev/disk/by-id/ |grep ${1#*-}` ]]; then
+            echo "===== skip attach $1 ====="
+        else
+            echo "===== attach $1 ====="
+            tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $CVM_ID
+            sleep 15
+        fi
         local tmp=`ls -la /dev/disk/by-id/ |grep ${1#*-}`
         local cbs_dev=${tmp##*/}
         echo "===== mount cbs_dev=$cbs_dev to $2 ====="
-        if [[ -n `parted -s /dev/$cbs_dev print|grep -i error` ]]; then
+        if [[ -n `parted -s /dev/$cbs_dev print 2>&1|grep -i error` ]]; then
             echo "do formt"
             mkfs -t ext4 /dev/$cbs_dev
         fi
@@ -193,16 +197,16 @@ init_dir_db-lookup() {
     local ex="tgz"
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
-        wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-0.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-0.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-1.$ex ]; then
-        wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-1.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-1.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-2.$ex ]; then
-        wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-2.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-2.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
-        wget https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-metachain.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-metachain.$ex -P $FLOAT_MOUNT_DIR
     fi
 
     # extract block databases in parallel processes
@@ -268,7 +272,7 @@ run_squad() {
     if [ "$1" == "lite" ]; then
         init_env_lite
         init_dir_lite
-    elif [ "$1" == "db-lookup" ]; then
+    elif [[ "$1" == "db-lookup-ssd" || "$1" == "db-lookup-hdd" ]]; then
         init_env_db-lookup
         init_dir_db-lookup
     else

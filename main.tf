@@ -1,5 +1,7 @@
 locals {
-  run_node_file = var.deployment_mode == "single" ? "/run-node.sh" : "/squad-run-node.sh"
+  run_node_file   = var.deployment_mode == "single" ? "/run-node.sh" : "/squad-run-node.sh"
+  cloud_disk_type = var.observer_type == "db-lookup-hdd" ? "CLOUD_PREMIUM" : "CLOUD_SSD"
+  need_cloud_disk = contains(["db-lookup-hdd", "db-lookup-ssd"], var.observer_type) ? 1 : 0
 }
 
 data "external" "env" {
@@ -37,6 +39,70 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
 
   instance_name = var.instance_name
   zone          = var.az
+
+  provisioner "local-exec" {
+    command = "sleep 15"
+  }
+}
+
+resource "tencentcloud_lighthouse_disk" "cbs-0" {
+  count     = local.need_cloud_disk
+  zone      = var.az
+  disk_name = "cbs-0"
+  disk_type = local.cloud_disk_type
+  disk_size = 250
+  disk_charge_prepaid {
+    period     = var.purchase_period
+    renew_flag = var.renew_flag
+    time_unit  = "m"
+  }
+  depends_on = [tencentcloud_lighthouse_instance.lighthouse]
+}
+
+# why we use attachment not auto_mount_configuration when creating cloud disk?
+# to make it possible to do terraform destroy, when destroy disk it must be dettached.
+# bad design here.
+resource "tencentcloud_lighthouse_disk_attachment" "attach-0" {
+  disk_id     = tencentcloud_lighthouse_disk.cbs-0[0].id
+  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
+}
+
+resource "tencentcloud_lighthouse_disk" "cbs-1" {
+  count     = local.need_cloud_disk
+  zone      = var.az
+  disk_name = "cbs-1"
+  disk_type = local.cloud_disk_type
+  disk_size = 350
+  disk_charge_prepaid {
+    period     = var.purchase_period
+    renew_flag = var.renew_flag
+    time_unit  = "m"
+  }
+  depends_on = [tencentcloud_lighthouse_instance.lighthouse]
+}
+
+resource "tencentcloud_lighthouse_disk_attachment" "attach-1" {
+  disk_id     = tencentcloud_lighthouse_disk.cbs-1[0].id
+  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
+}
+
+resource "tencentcloud_lighthouse_disk" "cbs-2" {
+  count     = local.need_cloud_disk
+  zone      = var.az
+  disk_name = "cbs-2"
+  disk_type = local.cloud_disk_type
+  disk_size = 150
+  disk_charge_prepaid {
+    period     = var.purchase_period
+    renew_flag = var.renew_flag
+    time_unit  = "m"
+  }
+  depends_on = [tencentcloud_lighthouse_instance.lighthouse]
+}
+
+resource "tencentcloud_lighthouse_disk_attachment" "attach-2" {
+  disk_id     = tencentcloud_lighthouse_disk.cbs-2[0].id
+  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 }
 
 resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
@@ -65,17 +131,19 @@ resource "tencentcloud_tat_invoker" "run" {
     secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
     secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
     lighthouse_id = resource.tencentcloud_lighthouse_instance.lighthouse.id
-    cbs_0         = var.cbs["data_cbs"][0]
-    cbs_1         = var.cbs["data_cbs"][1]
-    cbs_2         = var.cbs["data_cbs"][2]
-    cbs_float     = var.cbs["floating_cbs"]
+    cbs_0         = resource.tencentcloud_lighthouse_disk.cbs-0[0].id
+    cbs_1         = resource.tencentcloud_lighthouse_disk.cbs-1[0].id
+    cbs_2         = resource.tencentcloud_lighthouse_disk.cbs-2[0].id
+    cbs_float     = var.floating_cbs
   })
   schedule_settings {
     policy      = "ONCE"
     invoke_time = timeadd(timestamp(), "10s")
   }
   depends_on = [
-    tencentcloud_lighthouse_instance.lighthouse,
-    tencentcloud_lighthouse_firewall_rule.firewall_rule
+    tencentcloud_lighthouse_firewall_rule.firewall_rule,
+    tencentcloud_lighthouse_disk_attachment.attach-0,
+    tencentcloud_lighthouse_disk_attachment.attach-1,
+    tencentcloud_lighthouse_disk_attachment.attach-2
   ]
 }

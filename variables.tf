@@ -84,18 +84,7 @@ variable "firewall_rules" {
   }]
 }
 
-variable "cbs" {
-  type = object({
-    data_cbs     = list(string)
-    floating_cbs = string
-  })
-  description = "CBS instances for deployment"
-  default = {
-    data_cbs     = ["", "", ""]
-    floating_cbs = ""
-  }
-  validation {
-    condition     = length(var.cbs["data_cbs"]) == 3
-    error_message = "Field data_cbs must have 3 CBS instances with fixed order: [node_0, node_1, node_2]"
-  }
+variable "floating_cbs" {
+  type        = string
+  description = "CBS instance for deployment"
 }
