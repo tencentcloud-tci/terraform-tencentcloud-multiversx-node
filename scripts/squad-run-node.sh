@@ -96,8 +96,9 @@ run() {
 }
 
 init_env_lite() {
-    yum install -y -q screen
+    yum install -y -q python3 screen
     # install tccli
+    python3 -m pip install pip
     pip3 install -q tccli
 }
 
@@ -125,9 +126,10 @@ init_env_db-lookup() {
     echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
     # install python p7zip
     # yum install -y https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm
-    yum install -y -q python3 p7zip.x86_64 screen
+    yum install -y -q python3 screen
 
     # install tccli
+    python3 -m pip install pip
     pip3 install -q tccli
 }
 
@@ -234,7 +236,7 @@ cleanup() {
     echo "===== clean up ====="
     if [ "{{deployment_mode}}" != "lite" ]; then
         umount $FLOAT_MOUNT_DIR
-        tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT
+        tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT || true
     fi
 
     unset TENCENTCLOUD_SECRET_ID
