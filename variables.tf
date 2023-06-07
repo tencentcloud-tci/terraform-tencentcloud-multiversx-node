@@ -79,3 +79,9 @@ variable "floating_cbs" {
   description = "CBS instance for deployment"
   default     = ""
 }
+
+variable "node2_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-2"
+  default = 150
+}
