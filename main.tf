@@ -1,11 +1,11 @@
 locals {
-  run_node_file   = "/squad-run-node.sh"
+  run_node_file   = "/scripts/squad-run-node.sh"
   cloud_disk_type = var.deployment_mode == "db-lookup-hdd" ? "CLOUD_PREMIUM" : "CLOUD_SSD"
   need_cloud_disk = contains(["db-lookup-hdd", "db-lookup-ssd"], var.deployment_mode) ? 1 : 0
 }
 
 data "external" "env" {
-  program = ["${path.module}/env.sh"]
+  program = ["${path.module}/scripts/env.sh"]
 }
 
 resource "tencentcloud_tat_command" "node-runner" {
@@ -21,7 +21,7 @@ resource "tencentcloud_tat_command" "node-runner" {
 
 resource "tencentcloud_tat_command" "node-tool" {
   command_name      = "multiversx-node-tool"
-  content           = file(join("", [path.module, "/squad-node-tool.sh"]))
+  content           = file(join("", [path.module, "/scripts/squad-node-tool.sh"]))
   description       = "node tool, you can use it to upgrade, start, stop and restart service"
   command_type      = "SHELL"
   timeout           = 3600
