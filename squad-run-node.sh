@@ -5,16 +5,21 @@ set -e
 SQUAD_BASE_DIR=/data/MyObservingSquad
 FLOAT_MOUNT_DIR=/data/float
 PROXY_BASE_DIR=$SQUAD_BASE_DIR/proxy
-OBSERVER_TYPE_FILE=$SQUAD_BASE_DIR/observer_type
+DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/deployment_mode
 
 KEY_DIR=/data/keys
 
 REGION=`curl http://metadata.tencentyun.com/latest/meta-data/placement/region`
-CVM_ID={{lighthouse_id}}
+LH_ID={{lighthouse_id}}
 CBS_ID_0={{cbs_0}}
 CBS_ID_1={{cbs_1}}
 CBS_ID_2={{cbs_2}}
 CBS_ID_FLOAT={{cbs_float}}
+
+#
+export TENCENTCLOUD_SECRET_ID={{secret_id}}
+export TENCENTCLOUD_SECRET_KEY={{secret_key}}
+export TENCENTCLOUD_REGION=$REGION
 
 pull_docker_images() {
     local dhgenkey="https://registry.hub.docker.com/v2/repositories/multiversx/chain-keygenerator/tags"
@@ -74,7 +79,7 @@ run() {
             --name squad-${SHARD} multiversx/chain-observer:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
-            --operation-mode snapshotless-observer
+            --operation-mode=snapshotless-observer
         else
             screen -dmS squad-${SHARD} docker run --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
@@ -92,6 +97,8 @@ run() {
 
 init_env_lite() {
     yum install -y -q screen
+    # install tccli
+    pip3 install -q tccli
 }
 
 init_dir_lite() {
@@ -111,7 +118,7 @@ init_dir_lite() {
 
 init_env_db-lookup() {
     echo "===== init env db-lookup ====="
-    echo "CVM_ID=$CVM_ID"
+    echo "LH_ID=$LH_ID"
     echo "CBS_ID_0=$CBS_ID_0"
     echo "CBS_ID_1=$CBS_ID_1"
     echo "CBS_ID_2=$CBS_ID_2"
@@ -133,7 +140,7 @@ attach_and_mount() {
             echo "===== skip attach $1 ====="
         else
             echo "===== attach $1 ====="
-            tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $CVM_ID
+            tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $LH_ID
             sleep 15
         fi
         local tmp=`ls -la /dev/disk/by-id/ |grep ${1#*-}`
@@ -164,11 +171,6 @@ init_dir_db-lookup() {
     NODE_1_DIR=$CBS_1_DIR/node-1
     NODE_2_DIR=$CBS_2_DIR/node-2
     META_NODE_DIR=$CBS_0_DIR/node-metachain
-
-    #
-    export TENCENTCLOUD_SECRET_ID={{secret_id}}
-    export TENCENTCLOUD_SECRET_KEY={{secret_key}}
-    export TENCENTCLOUD_REGION=$REGION
 
     # create CBS
 
@@ -230,8 +232,10 @@ init_dir_db-lookup() {
 cleanup() {
     # clean up
     echo "===== clean up ====="
-    umount $FLOAT_MOUNT_DIR
-    tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT
+    if [ "{{deployment_mode}}" != "lite" ]; then
+        umount $FLOAT_MOUNT_DIR
+        tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT
+    fi
 
     unset TENCENTCLOUD_SECRET_ID
     unset TENCENTCLOUD_SECRET_KEY
@@ -242,29 +246,32 @@ cleanup() {
 # They are useless, need to be removed.
 remove_default_firewall_rules() {
     echo "===== remove default firewall rules ====="
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $CVM_ID \
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol ICMP --FirewallRules.0.Port ALL \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $CVM_ID \
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 3389 \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $CVM_ID \
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 22 \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $CVM_ID \
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 443 \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $CVM_ID \
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 80 \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
 }
 
 run_squad() {
-    if [ -f $OBSERVER_TYPE_FILE ]; then
-        local curr_type=`cat $OBSERVER_TYPE_FILE`
+    if [ -f $DEPLOYMENT_MODE_FILE ]; then
+        local curr_type=`cat $DEPLOYMENT_MODE_FILE`
         if [ "$1" != $curr_type ]; then
-            echo "===== fatal error, different observer type: input=$1 current=$curr_type"
+            echo "===== fatal error, different deployment mode: input=$1 current=$curr_type"
             exit 1
+        else
+            echo "===== already deployed, deployment mode: $1====="
+            exit 0
         fi
     fi
 
@@ -287,18 +294,17 @@ run_squad() {
         docker network create --subnet=10.0.0.0/24 multiversx-squad
     fi
 
-    local flag=$1
     # Start Observer of Shard 0
-    run 0 "MyObservingSquad-0" $NODE_0_DIR 10000 10.0.0.6 $flag
+    run 0 "MyObservingSquad-0" $NODE_0_DIR 10000 10.0.0.6 $1
 
     # Start Observer of Shard 1
-    run 1 "MyObservingSquad-1" $NODE_1_DIR 10001 10.0.0.5 $flag
+    run 1 "MyObservingSquad-1" $NODE_1_DIR 10001 10.0.0.5 $1
 
     # Start Observer of Shard 2
-    run 2 "MyObservingSquad-2" $NODE_2_DIR 10002 10.0.0.4 $flag
+    run 2 "MyObservingSquad-2" $NODE_2_DIR 10002 10.0.0.4 $1
 
     # Start Observer of Metachain
-    run metachain "MyObservingSquad-metachain" $META_NODE_DIR 10003 10.0.0.3 $flag
+    run metachain "MyObservingSquad-metachain" $META_NODE_DIR 10003 10.0.0.3 $1
 
     # Start Proxy
     if [ -z $(docker ps -q -f "name=proxy") ]; then
@@ -309,17 +315,15 @@ run_squad() {
     fi
 
     # Write observer type
-    echo "$1" > $OBSERVER_TYPE_FILE
+    echo "$1" > $DEPLOYMENT_MODE_FILE
     
-    if [ "$1" == "db-lookup" ]; then
-        cleanup
-    fi
+    cleanup
 }
 
 # ------------------------------
 # main
 # ------------------------------
-# observer_type: lite, db-lookup
-echo "===== deploy {{observer_type}} ====="
+# deployment_mode: lite, db-lookup-hdd, db-lookup-ssd
+echo "===== deploy {{deployment_mode}} ====="
 pull_docker_images
-run_squad {{observer_type}}
+run_squad {{deployment_mode}}

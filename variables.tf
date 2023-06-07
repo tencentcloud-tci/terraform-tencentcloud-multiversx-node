@@ -11,19 +11,9 @@ variable "az" {
 variable "deployment_mode" {
   type        = string
   description = "Deployment mode"
-  default     = "squad"
-  validation {
-    condition     = contains(["squad", "single"], var.deployment_mode)
-    error_message = "Please choose one of the following deployment modes: single, squad."
-  }
-}
-
-variable "observer_type" {
-  type        = string
-  description = "Observer node type"
   default     = "lite"
   validation {
-    condition     = contains(["lite", "db-lookup-hdd", "db-lookup-ssd"], var.observer_type)
+    condition     = contains(["lite", "db-lookup-hdd", "db-lookup-ssd"], var.deployment_mode)
     error_message = "Please choose one of the following node types: lite, db-lookup-hdd, db-lookup-ssd"
   }
 }

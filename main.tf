@@ -1,7 +1,7 @@
 locals {
-  run_node_file   = var.deployment_mode == "single" ? "/run-node.sh" : "/squad-run-node.sh"
-  cloud_disk_type = var.observer_type == "db-lookup-hdd" ? "CLOUD_PREMIUM" : "CLOUD_SSD"
-  need_cloud_disk = contains(["db-lookup-hdd", "db-lookup-ssd"], var.observer_type) ? 1 : 0
+  run_node_file   = "/squad-run-node.sh"
+  cloud_disk_type = var.deployment_mode == "db-lookup-hdd" ? "CLOUD_PREMIUM" : "CLOUD_SSD"
+  need_cloud_disk = contains(["db-lookup-hdd", "db-lookup-ssd"], var.deployment_mode) ? 1 : 0
 }
 
 data "external" "env" {
@@ -130,24 +130,24 @@ resource "tencentcloud_tat_invoker" "run" {
   command_id   = tencentcloud_tat_command.node-runner.id
   instance_ids = [tencentcloud_lighthouse_instance.lighthouse.id, ]
   username     = "root"
-  parameters = var.deployment_mode == "single" ? jsonencode({
-    observer_type = var.observer_type
-    secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
-    secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
-    lighthouse_id = resource.tencentcloud_lighthouse_instance.lighthouse.id
-    cbs_0         = ""
-    cbs_1         = ""
-    cbs_2         = ""
-    cbs_float     = ""
+  parameters = var.deployment_mode == "lite" ? jsonencode({
+    deployment_mode = var.deployment_mode
+    secret_id       = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
+    secret_key      = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
+    lighthouse_id   = resource.tencentcloud_lighthouse_instance.lighthouse.id
+    cbs_0           = ""
+    cbs_1           = ""
+    cbs_2           = ""
+    cbs_float       = ""
     }) : jsonencode({
-    observer_type = var.observer_type
-    secret_id     = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
-    secret_key    = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
-    lighthouse_id = resource.tencentcloud_lighthouse_instance.lighthouse.id
-    cbs_0         = resource.tencentcloud_lighthouse_disk.cbs-0[0].id
-    cbs_1         = resource.tencentcloud_lighthouse_disk.cbs-1[0].id
-    cbs_2         = resource.tencentcloud_lighthouse_disk.cbs-2[0].id
-    cbs_float     = var.floating_cbs
+    deployment_mode = var.deployment_mode
+    secret_id       = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
+    secret_key      = data.external.env.result["TENCENTCLOUD_SECRET_KEY"]
+    lighthouse_id   = resource.tencentcloud_lighthouse_instance.lighthouse.id
+    cbs_0           = resource.tencentcloud_lighthouse_disk.cbs-0[0].id
+    cbs_1           = resource.tencentcloud_lighthouse_disk.cbs-1[0].id
+    cbs_2           = resource.tencentcloud_lighthouse_disk.cbs-2[0].id
+    cbs_float       = var.floating_cbs
   })
   schedule_settings {
     policy      = "ONCE"
