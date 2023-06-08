@@ -11,19 +11,9 @@ variable "az" {
 variable "deployment_mode" {
   type        = string
   description = "Deployment mode"
-  default     = "squad"
-  validation {
-    condition     = contains(["squad", "single"], var.deployment_mode)
-    error_message = "Please choose one of the following deployment modes: single, squad."
-  }
-}
-
-variable "observer_type" {
-  type        = string
-  description = "Observer node type"
   default     = "lite"
   validation {
-    condition     = contains(["lite", "db-lookup-hdd", "db-lookup-ssd"], var.observer_type)
+    condition     = contains(["lite", "db-lookup-hdd", "db-lookup-ssd"], var.deployment_mode)
     error_message = "Please choose one of the following node types: lite, db-lookup-hdd, db-lookup-ssd"
   }
 }
@@ -84,18 +74,26 @@ variable "firewall_rules" {
   }]
 }
 
-variable "cbs" {
-  type = object({
-    data_cbs     = list(string)
-    floating_cbs = string
-  })
-  description = "CBS instances for deployment"
-  default = {
-    data_cbs     = ["", "", ""]
-    floating_cbs = ""
-  }
-  validation {
-    condition     = length(var.cbs["data_cbs"]) == 3
-    error_message = "Field data_cbs must have 3 CBS instances with fixed order: [node_0, node_1, node_2]"
-  }
+variable "floating_cbs" {
+  type        = string
+  description = "CBS instance for deployment"
+  default     = ""
+}
+
+variable "node0_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-0"
+  default = 250
+}
+
+variable "node1_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-1"
+  default = 350
+}
+
+variable "node2_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-2"
+  default = 150
 }

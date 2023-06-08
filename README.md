@@ -12,8 +12,7 @@ module "observer" {
   az            = "eu-frankfurt-1"
 
   instance_name = "mx-light"
-  deployment_mode = "squad"
-  observer_type   = "lite"
+  deployment_mode = "lite"
   purchase_period = 1
 }
 ```
@@ -33,12 +32,14 @@ The terraform input variables, are found in the page below:
 
 ## Deployment details
 
-First of all, edit the file `/data/MyObservingSquad/observer_type` in order to select the observer type of the deployment.
+We use screen when start the different programs. There are 5 sessions:
 
-For example:
-```
-db-lookup
-```
+* proxy
+* squad-metachain
+* squad-0
+* squad-1
+* squad-2
+
 Here are the supported modes:
 ### Lite node type
 
@@ -67,16 +68,24 @@ This node type requires an additional 3 cloud disks: cbs-0, cbs-1, cbs-2 plus on
 | node-metachain | /data/MyObservingSquad/cbs-0/node-metachain |
 | proxy | /data/MyObservingSquad/proxy |
 
+There are types of cloud disk here:
+
+* hdd: map to "premium cloud disks" on TencentCloud
+* ssd: map to "SSD cloud disks" on TencentCloud
+
+The performance of these 2 type cloud disks: 
+https://www.tencentcloud.com/document/product/362/31636
+
 ## How to use TAT commands
 ### multiversx-node-runner
 This command is used to deploy a node. 
 
 #### Parameters
-`observer_type`
+`deployment_mode`
 * required
-* value: lite, db-lookup
+* value: lite, db-lookup-hdd, db-lookup-ssd
 
-when `observer_type=db-lookup`, extra parameters should be set:
+when `deployment_mode=db-lookup-hdd, db-lookup-ssd`, extra parameters should be set:
 
 * `lighthouse_id`: the lighthouse instance id, like: lhins-q45lxxxx
 * `cbs_0`: the cloud disk for node-0 and node-metachain
