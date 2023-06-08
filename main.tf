@@ -51,7 +51,7 @@ resource "tencentcloud_lighthouse_disk" "cbs-0" {
   zone      = var.az
   disk_name = "cbs-0"
   disk_type = local.cloud_disk_type
-  disk_size = 250
+  disk_size = var.node0_disk_size
   disk_charge_prepaid {
     period     = var.purchase_period
     renew_flag = var.renew_flag
@@ -74,7 +74,7 @@ resource "tencentcloud_lighthouse_disk" "cbs-1" {
   zone      = var.az
   disk_name = "cbs-1"
   disk_type = local.cloud_disk_type
-  disk_size = 350
+  disk_size = var.node1_disk_size
   disk_charge_prepaid {
     period     = var.purchase_period
     renew_flag = var.renew_flag

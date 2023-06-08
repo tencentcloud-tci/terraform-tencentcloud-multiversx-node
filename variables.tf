@@ -80,6 +80,18 @@ variable "floating_cbs" {
   default     = ""
 }
 
+variable "node0_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-0"
+  default = 250
+}
+
+variable "node1_disk_size" {
+  type = number
+  description = "Size of the disk used to deploy node-1"
+  default = 350
+}
+
 variable "node2_disk_size" {
   type = number
   description = "Size of the disk used to deploy node-2"
