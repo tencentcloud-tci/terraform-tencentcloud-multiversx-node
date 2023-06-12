@@ -6,18 +6,18 @@ set -e
 SQUAD_BASE_DIR="/data/MyObservingSquad"
 FLOAT_MOUNT_DIR=/data/float
 PROXY_BASE_DIR=$SQUAD_BASE_DIR/proxy
-OBSERVER_TYPE_FILE=$SQUAD_BASE_DIR/deployment_mode
+DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/deployment_mode
 
 NODES=("0" "1" "2" "metachain")
 declare -A NODE_0 NODE_1 NODE_2 NODE_META KEY_GENERATOR PROXY
 
 init() {
 
-    if [ ! -f $OBSERVER_TYPE_FILE ]; then
+    if [ ! -f $DEPLOYMENT_MODE_FILE ]; then
         echo "error: the node has not yet been deployed, please deploy first"
         exit 1
     fi
-    CURRENT_OBSERVER_TYPE=`cat $OBSERVER_TYPE_FILE`
+    CURRENT_DEPLOYMENT_MODE=`cat $DEPLOYMENT_MODE_FILE`
 
     NODE_0=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-0" [Name]="MyObservingSquad-0" [IP]="10.0.0.6" [Port]="10000" [Shard]="0" )
     NODE_1=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-1" [Name]="MyObservingSquad-1" [IP]="10.0.0.5" [Port]="10001" [Shard]="1" )
@@ -26,7 +26,7 @@ init() {
     KEY_GENERATOR=( [Image]="multiversx/chain-keygenerator" )
     PROXY=( [Image]="multiversx/chain-squad-proxy" [Dir]="$SQUAD_BASE_DIR/proxy" [IP]="10.0.0.2" [Shard]="proxy" )
 
-    if [ "$CURRENT_OBSERVER_TYPE" == "db-lookup" ]; then
+    if [[ "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-ssd" || "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-hdd" ]]; then
         CBS_0_DIR=$SQUAD_BASE_DIR/cbs-0
         CBS_1_DIR=$SQUAD_BASE_DIR/cbs-1
         CBS_2_DIR=$SQUAD_BASE_DIR/cbs-2
@@ -154,7 +154,7 @@ restart_node() {
     echo "===== restart node: $1 ====="
     stop_node $1
     sleep 2
-    start_node $1 $CURRENT_OBSERVER_TYPE
+    start_node $1 $CURRENT_DEPLOYMENT_MODE
 }
 
 stop_all() {
@@ -194,7 +194,7 @@ upgrade() {
 
 destroy() {
     stop_all
-    if [ "$CURRENT_OBSERVER_TYPE" == "db-lookup" ]; then
+    if [[ "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-ssd" || "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-hdd" ]]; then
         # umount
         umount $CBS_0_DIR && rm -rf $CBS_0_DIR
         umount $CBS_1_DIR && rm -rf $CBS_1_DIR

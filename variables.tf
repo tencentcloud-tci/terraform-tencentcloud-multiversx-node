@@ -8,6 +8,11 @@ variable "az" {
   description = "The Availability Zone within the region"
 }
 
+variable "need_tat_commands" {
+  type        = bool
+  description = "If need to create the TAT commands which contains multiversx-node-runner and multiversx-node-tool"
+}
+
 variable "deployment_mode" {
   type        = string
   description = "Deployment mode"
@@ -29,7 +34,7 @@ variable "blueprint_id" {
   description = "Lighthouse blueprint id"
   default     = "lhbp-f1lkcd41" # docker-centos7
   validation {
-    condition = contains(["lhbp-f1lkcd41"], var.blueprint_id)
+    condition     = contains(["lhbp-f1lkcd41"], var.blueprint_id)
     error_message = "Please choose the following value: lhbp-f1lkcd41"
   }
 }
@@ -85,19 +90,19 @@ variable "floating_cbs" {
 }
 
 variable "node0_disk_size" {
-  type = number
+  type        = number
   description = "Size of the disk used to deploy node-0"
-  default = 250
+  default     = 250
 }
 
 variable "node1_disk_size" {
-  type = number
+  type        = number
   description = "Size of the disk used to deploy node-1"
-  default = 350
+  default     = 350
 }
 
 variable "node2_disk_size" {
-  type = number
+  type        = number
   description = "Size of the disk used to deploy node-2"
-  default = 150
+  default     = 150
 }

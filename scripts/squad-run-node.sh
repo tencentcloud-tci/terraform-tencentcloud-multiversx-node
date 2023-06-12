@@ -263,6 +263,9 @@ remove_default_firewall_rules() {
     tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
     --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 80 \
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
+    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
+    --FirewallRules.0.Protocol UDP --FirewallRules.0.Port 3389 \
+    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
 }
 
 run_squad() {
