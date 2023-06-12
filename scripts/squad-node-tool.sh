@@ -6,7 +6,7 @@ set -e
 SQUAD_BASE_DIR="/data/MyObservingSquad"
 FLOAT_MOUNT_DIR=/data/float
 PROXY_BASE_DIR=$SQUAD_BASE_DIR/proxy
-OBSERVER_TYPE_FILE=$SQUAD_BASE_DIR/observer_type
+OBSERVER_TYPE_FILE=$SQUAD_BASE_DIR/deployment_mode
 
 NODES=("0" "1" "2" "metachain")
 declare -A NODE_0 NODE_1 NODE_2 NODE_META KEY_GENERATOR PROXY
@@ -43,9 +43,8 @@ init() {
 # input: 
 #   $1: image uri, for example: multiversx/chain-observer
 get_image_latest_tag() {
-    local url="https://registry.hub.docker.com/v2/repositories/${$1}/tags"
-    local tag=`curl -s -S $url | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
-    return $tag
+    local url="https://registry.hub.docker.com/v2/repositories/$1/tags"
+    NEW_TAG=`curl -s -S $url | jq '."results"[]["name"]' | sed -n '1p' | tr -d '"'`
 }
 
 # input:
@@ -169,10 +168,10 @@ stop_all() {
 upgrade() {
     # check node image tag
     local image=${NODE_0["Image"]}
-    local latest_tag=$(get_image_latest_tag $image)
-    if [ -z $(docker images -q $image:$latest_tag) ]; then
+    get_image_latest_tag $image
+    if [ -z $(docker images -q $image:$NEW_TAG) ]; then
         echo "===== start node upgrade ====="
-        pull_image $image $latest_tag
+        pull_image $image $NEW_TAG
         restart_node ${NODE_0["Shard"]}
         restart_node ${NODE_1["Shard"]}
         restart_node ${NODE_2["Shard"]}
@@ -183,10 +182,10 @@ upgrade() {
 
     # check proxy image tag
     image=${PROXY["Image"]}
-    latest_tag=$(get_image_latest_tag $image)
-    if [ -z $(docker images -q $image:$latest_tag) ]; then
+    get_image_latest_tag $image
+    if [ -z $(docker images -q $image:$NEW_TAG) ]; then
         echo "===== start proxy upgrade ====="
-        pull_image $image $latest_tag
+        pull_image $image $NEW_TAG
         restart_node ${PROXY["Shard"]}
     else
         echo "===== skip proxy upgrade ====="
