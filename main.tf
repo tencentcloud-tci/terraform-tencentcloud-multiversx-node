@@ -2,13 +2,27 @@ locals {
   run_node_file   = "/scripts/squad-run-node.sh"
   cloud_disk_type = var.deployment_mode == "db-lookup-hdd" ? "CLOUD_PREMIUM" : "CLOUD_SSD"
   need_cloud_disk = contains(["db-lookup-hdd", "db-lookup-ssd"], var.deployment_mode) ? 1 : 0
+  need_tat        = var.need_tat_commands ? 1 : 0
 }
 
 data "external" "env" {
   program = ["${path.module}/scripts/env.sh"]
 }
 
+data "tencentcloud_tat_command" "command" {
+  command_type = "SHELL"
+  created_by   = "USER"
+  command_name = "multiversx-node-runner"
+  lifecycle {
+    postcondition {
+      condition     = anytrue([!var.need_tat_commands && self.command_set != null, var.need_tat_commands && self.command_set == null])
+      error_message = "Please check the TAT command, input var need_tat_commands set wrong"
+    }
+  }
+}
+
 resource "tencentcloud_tat_command" "node-runner" {
+  count             = local.need_tat
   command_name      = "multiversx-node-runner"
   content           = file(join("", [path.module, local.run_node_file]))
   description       = "run node observer"
@@ -20,6 +34,7 @@ resource "tencentcloud_tat_command" "node-runner" {
 }
 
 resource "tencentcloud_tat_command" "node-tool" {
+  count             = local.need_tat
   command_name      = "multiversx-node-tool"
   content           = file(join("", [path.module, "/scripts/squad-node-tool.sh"]))
   description       = "node tool, you can use it to upgrade, start, stop and restart service"
@@ -125,9 +140,9 @@ resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
 }
 
 resource "tencentcloud_tat_invoker" "run" {
-  name         = "start lite node"
+  name         = "deploy node"
   type         = "SCHEDULE"
-  command_id   = tencentcloud_tat_command.node-runner.id
+  command_id   = var.need_tat_commands ? tencentcloud_tat_command.node-runner[0].id : data.tencentcloud_tat_command.command.command_set[0].command_id
   instance_ids = [tencentcloud_lighthouse_instance.lighthouse.id, ]
   username     = "root"
   parameters = var.deployment_mode == "lite" ? jsonencode({
