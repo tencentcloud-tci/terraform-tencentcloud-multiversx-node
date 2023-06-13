@@ -58,7 +58,16 @@ variable "renew_flag" {
   }
 }
 
-variable "firewall_rules" {
+variable "ssh_client_cidr" {
+  type        = string
+  description = "SSH client cidr"
+  validation {
+    condition     = can(cidrhost(var.ssh_client_cidr, 0))
+    error_message = "Must be valid IPv4 CIDR"
+  }
+}
+
+variable "extra_firewall_rules" {
   type = list(object({
     protocol                  = string
     port                      = string
@@ -66,21 +75,8 @@ variable "firewall_rules" {
     action                    = string
     firewall_rule_description = string
   }))
-  description = "Firewall rules"
-  default = [{
-    "protocol"                  = "TCP"
-    "port"                      = "37373,38383"
-    "cidr_block"                = "0.0.0.0/0"
-    "action"                    = "ACCEPT"
-    "firewall_rule_description" = "ports required by nodes"
-    },
-    {
-      "protocol"                  = "TCP"
-      "port"                      = "22"
-      "cidr_block"                = "172.10.1.0/24"
-      "action"                    = "ACCEPT"
-      "firewall_rule_description" = "ssh port"
-  }]
+  description = "Extra firewall rules"
+  default     = []
 }
 
 variable "floating_cbs" {

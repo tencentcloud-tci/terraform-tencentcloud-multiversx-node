@@ -15,8 +15,8 @@ data "tencentcloud_tat_command" "command" {
   command_name = "multiversx-node-runner"
   lifecycle {
     postcondition {
-      condition     = anytrue([!var.need_tat_commands && self.command_set != null, var.need_tat_commands && self.command_set == null])
-      error_message = "Please check the TAT command, input var need_tat_commands set wrong"
+      condition     = anytrue([!var.need_tat_commands && self.command_set != null, var.need_tat_commands])
+      error_message = "Please check the TAT command, there is no required TAT command"
     }
   }
 }
@@ -127,8 +127,24 @@ resource "tencentcloud_lighthouse_disk_attachment" "attach-2" {
 resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 
+  firewall_rules {
+    protocol                  = "TCP"
+    port                      = "37373,38383"
+    cidr_block                = "0.0.0.0/0"
+    action                    = "ACCEPT"
+    firewall_rule_description = "ports required by node"
+  }
+
+  firewall_rules {
+    protocol                  = "TCP"
+    port                      = "22"
+    cidr_block                = var.ssh_client_cidr
+    action                    = "ACCEPT"
+    firewall_rule_description = "ssh port"
+  }
+
   dynamic "firewall_rules" {
-    for_each = var.firewall_rules
+    for_each = var.extra_firewall_rules
     content {
       protocol                  = lookup(firewall_rules.value, "protocol", "TCP")
       port                      = lookup(firewall_rules.value, "port", "80")
