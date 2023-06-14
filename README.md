@@ -4,7 +4,8 @@ This solution deploys a Terraform stack for the MultiversX observer nodes on Ten
 
 Multiversx documentation: https://github.com/multiversx/mx-chain-observing-squad#observing-squad
 
-# Choose the right observer node type. Here are the options.
+# Choose the right observer node type 
+Here are the options.
 
 **Observer-Lite**: MultiversX Observer node with "lite" deployment mode for all 4 shards, which optimizes speed but doesn't offer access to the full blockchain history but only stores the current epoch. Usage:
  - light dApps which don't need full access to all blockchain history
@@ -205,3 +206,35 @@ This command is for daily operation.
 | `stop_all` | To stop the node's programs |
 | `start_all` | To start the node's programs |
 | `destroy` | To stop the node's programs, umount the working directory(for db-lookup observer type) and remove it |
+
+# Managing the node
+
+## Logging in
+ - Log in Tencent Cloud Console and go to Lighthouse service 
+ - Identify the instance and click log in -> Auto -> Login. you are now in the console
+
+## Verify operation
+ - Verify the node processes are running. You should see something like below
+ ```bash
+          [lighthouse@VM-0-24-centos ~]$ sudo -i
+          [root@VM-0-24-centos ~]# docker ps
+          CONTAINER ID   IMAGE                                COMMAND                  CREATED              STATUS              PORTS                                NAMES
+          d99f497501cd   multiversx/chain-squad-proxy:using   "./proxy ./proxy"        About a minute ago   Up About a minute   8079-8080/tcp                        proxy
+          1ade927d96e7   multiversx/chain-observer:using      "/go/mx-chain-go/cmd…"   About a minute ago   Up About a minute   8080/tcp, 0.0.0.0:10003->37373/tcp   squad-metachain
+          c20f7bc91887   multiversx/chain-observer:using      "/go/mx-chain-go/cmd…"   About a minute ago   Up About a minute   8080/tcp, 0.0.0.0:10002->37373/tcp   squad-2
+          51c1aa339df2   multiversx/chain-observer:using      "/go/mx-chain-go/cmd…"   About a minute ago   Up About a minute   8080/tcp, 0.0.0.0:10001->37373/tcp   squad-1
+          30a5d0c28e48   multiversx/chain-observer:using      "/go/mx-chain-go/cmd…"   About a minute ago   Up About a minute   8080/tcp, 0.0.0.0:10000->37373/tcp   squad-0
+          [root@VM-0-24-centos ~]# screen -r
+          There are several suitable screens on:
+               4481.proxy      (Detached)
+               4420.squad-metachain    (Detached)
+               4378.squad-2    (Detached)
+               4357.squad-1    (Detached)
+               4332.squad-0    (Detached)
+          Type "screen [-d] -r [pid.]tty.host" to resume one of them.
+          [root@VM-0-24-centos ~]# 
+```
+ - There are other, more advanced ways to verify node operation. Please check [MultiversX repository](https://github.com/multiversx/mx-chain-observing-squad)
+ - Verify machine load and traffic by clicking the `Monitoring` tab
+ 
+
