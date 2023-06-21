@@ -154,10 +154,10 @@ resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
   dynamic "firewall_rules" {
     for_each = var.extra_firewall_rules
     content {
-      protocol                  = lookup(firewall_rules.value, "protocol", "TCP")
-      port                      = lookup(firewall_rules.value, "port", "80")
-      cidr_block                = lookup(firewall_rules.value, "cidr_block", "0.0.0.0/0")
-      action                    = lookup(firewall_rules.value, "action", "DROP")
+      protocol                  = lookup(firewall_rules.value, "protocol", "")
+      port                      = lookup(firewall_rules.value, "port", "")
+      cidr_block                = lookup(firewall_rules.value, "cidr_block", "")
+      action                    = lookup(firewall_rules.value, "action", "")
       firewall_rule_description = lookup(firewall_rules.value, "firewall_rule_description", "")
     }
   }
