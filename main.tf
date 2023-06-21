@@ -136,6 +136,14 @@ resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
   }
 
   firewall_rules {
+    protocol                  = "UDP"
+    port                      = "123"
+    cidr_block                = "0.0.0.0/0"
+    action                    = "ACCEPT"
+    firewall_rule_description = "port required by the NTP service"
+  }
+
+  firewall_rules {
     protocol                  = "TCP"
     port                      = "22"
     cidr_block                = var.ssh_client_cidr
