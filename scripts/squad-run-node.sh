@@ -302,15 +302,19 @@ run_squad() {
 
     # Start Observer of Shard 0
     run 0 "MyObservingSquad-0" $NODE_0_DIR 10000 10.0.0.6 $1
+    sleep 30
 
     # Start Observer of Shard 1
     run 1 "MyObservingSquad-1" $NODE_1_DIR 10001 10.0.0.5 $1
+    sleep 30
 
     # Start Observer of Shard 2
     run 2 "MyObservingSquad-2" $NODE_2_DIR 10002 10.0.0.4 $1
+    sleep 30
 
     # Start Observer of Metachain
     run metachain "MyObservingSquad-metachain" $META_NODE_DIR 10003 10.0.0.3 $1
+    sleep 30
 
     # Start Proxy
     if [ -z $(docker ps -q -f "name=proxy") ]; then
