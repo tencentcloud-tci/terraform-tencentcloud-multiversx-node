@@ -129,7 +129,7 @@ resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
 
   firewall_rules {
     protocol                  = "TCP"
-    port                      = "37373,38383"
+    port                      = "37373-38383"
     cidr_block                = "0.0.0.0/0"
     action                    = "ACCEPT"
     firewall_rule_description = "ports required by node"

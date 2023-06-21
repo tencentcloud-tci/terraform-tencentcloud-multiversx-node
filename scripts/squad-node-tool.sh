@@ -165,6 +165,14 @@ stop_all() {
     stop_node ${PROXY["Shard"]}
 }
 
+start_all() {
+    start_node ${NODE_0["Shard"]}
+    start_node ${NODE_1["Shard"]}
+    start_node ${NODE_2["Shard"]}
+    start_node ${NODE_META["Shard"]}
+    start_node ${PROXY["Shard"]}
+}
+
 upgrade() {
     # check node image tag
     local image=${NODE_0["Image"]}
@@ -214,11 +222,7 @@ run_command() {
     elif [ "$1" == "stop_all" ]; then
         stop_all
     elif [ "$1" == "start_all" ]; then
-        start_node ${NODE_0["Shard"]}
-        start_node ${NODE_1["Shard"]}
-        start_node ${NODE_2["Shard"]}
-        start_node ${NODE_META["Shard"]}
-        start_node ${PROXY["Shard"]}
+        start_all
     elif [ "$1" == "destroy" ]; then
         destroy
     else
