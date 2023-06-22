@@ -167,9 +167,13 @@ stop_all() {
 
 start_all() {
     start_node ${NODE_0["Shard"]}
+    sleep 30
     start_node ${NODE_1["Shard"]}
+    sleep 30
     start_node ${NODE_2["Shard"]}
+    sleep 30
     start_node ${NODE_META["Shard"]}
+    sleep 30
     start_node ${PROXY["Shard"]}
 }
 

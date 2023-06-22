@@ -88,18 +88,65 @@ For this you need to create a single file, which will contain the module instant
 
 Here is a sample
 
-### Sample
+### Sample lite observer
 ```hcl
-module "multiversx-lighthouse" {
+module "multiversx-observer-lite" {
+  
+  #source repo
   source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.2.1" #version of the terraform  module in the registry
-  az            = "eu-frankfurt-1" 
-  instance_name = "mx-myobserver" 
-  deployment_mode = "lite" 
-  purchase_period = 1 
-  blueprint_id = "lhbp-f1lkcd41" 
-  ssh_client_cidr = "100.100.100.111/32" 
-  need_tat_commands = true 
+  version = "0.2.2" #version of the terraform  module in the registry
+  
+  #basic variables
+  az            = "eu-frankfurt-1" #availability zone to deploy
+  instance_name = "mx-myobserver" #name of the LH instance
+  
+  #deployment variables
+  deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
+  purchase_period = 1 #the valability of the purchase, in months
+  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+
+  #firewall variables
+  ssh_client_cidr = "100.100.100.111/32"  #source ip of the management location (for SSH whitelisting)
+  extra_firewall_rules = [{ #specify the public proxy port
+    
+      protocol                  = "TCP"
+      port                      = "8079"
+      cidr_block                = "0.0.0.0/0"
+      action                    = "ACCEPT"
+      firewall_rule_description = "proxy port"
+    
+  }]
+}
+```
+### Sample db-lookup observer
+```hcl
+module "multiversx-observer" {
+  
+  #source repo
+  source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
+  version = "0.2.2" #version of the terraform  module in the registry
+  
+  #basic variables
+  az            = "eu-frankfurt-1" #availability zone to deploy
+  instance_name = "mx-myobserver" #name of the LH instance
+  
+  #deployment variables
+  deployment_mode = "db-lookup-hdd" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
+  purchase_period = 1 #the valability of the purchase, in months
+  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  floating_cbs = "your-disk-ID" #ID of the floater disk which will be used to download and extract the node DB history
+  
+  #firewall variables
+  ssh_client_cidr = "100.100.100.111/32" #source ip of the management location (for SSH whitelisting)
+  extra_firewall_rules = [{ #specify the public proxy port
+    
+      protocol                  = "TCP"
+      port                      = "8079"
+      cidr_block                = "0.0.0.0/0"
+      action                    = "ACCEPT"
+      firewall_rule_description = "proxy port"
+    
+  }]
 }
 ```
 
@@ -115,7 +162,8 @@ A few of parameters are needed to deploy the instance
  - `blueprint_id` used for selection of the instance image, leave default. [Other blueprints](https://www.tencentcloud.com/document/product/1103/42503)
  - `ssh_client_cidr` source ip of the management location (for SSH whitelisting)
  - `need_tat_commands` set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
- 
+ - `floating_cbs` ID of the floater disk which will be used to download and extract the node DB history
+ - `extra_firewall_rules` define own custom firewall inbound rule
 
 For reference here is the [Tencent Cloud Terraform provider](https://registry.terraform.io/providers/tencentcloudstack/tencentcloud/latest/docs/resources/lighthouse_instance)
 
@@ -130,13 +178,16 @@ The deployment will take more the for db-archive node types because of the node 
 
 ## Deployment details
 
-We use screen when start the different programs. There are 5 screen sessions created:
+We use screen when start the different services. There are 5 screen sessions created:
 
 * proxy
 * squad-metachain
 * squad-0
 * squad-1
 * squad-2
+
+If you login the console hit `screen -r` to view the running screens and if you wish to enter one of the shard or proxy processes add its name at the end. For example `screen -r squad-1`
+To exit the screen mode hit `CTRL-A + D`
 
 Here are some details of the supported modes:
 ### Lite node type
@@ -158,7 +209,7 @@ This node type requires an additional 3 cloud disks: cbs-0, cbs-1, cbs-2 plus on
 * cbs-2 containes the deployment of: node-2
 * cbs_float is a temporary disk, used to download the block database archives. By using these archive files, we can speed up the progress of synchronization during the initial deployment. When the node deployment is done, this temporary disk will be detached from the node.
 
-| Program | Directory |
+| Service | Directory |
 | -- | -- |
 | node-0 | /data/MyObservingSquad/cbs-0/node-0 |
 | node-1 | /data/MyObservingSquad/cbs-1/node-1 |
@@ -166,10 +217,10 @@ This node type requires an additional 3 cloud disks: cbs-0, cbs-1, cbs-2 plus on
 | node-metachain | /data/MyObservingSquad/cbs-0/node-metachain |
 | proxy | /data/MyObservingSquad/proxy |
 
-There are types of cloud disk here:
+For the db-lookup option there are types of cloud disk available:
 
-* hdd: map to "premium cloud disks" on TencentCloud
-* ssd: map to "SSD cloud disks" on TencentCloud
+* hdd: corresponds to "premium cloud disks" on TencentCloud
+* ssd: corresponds to "SSD cloud disks" on TencentCloud
 
 Check the performance of these 2 cloud disk types [here](https://www.tencentcloud.com/document/product/362/31636)
 
@@ -182,18 +233,14 @@ This command is used to deploy a node.
 * required
 * value: lite, db-lookup-hdd, db-lookup-ssd
 
-when `deployment_mode=db-lookup-hdd, db-lookup-ssd`, extra parameters should be set:
+when `deployment_mode=db-lookup-hdd, db-lookup-ssd`, extra variables should be set:
 
-* `lighthouse_id`: the lighthouse instance id, like: lhins-q45lxxxx
-* `cbs_0`: the cloud disk for node-0 and node-metachain
-* `cbs_1`: the cloud disk for node-1
-* `cbs_2`: the cloud disk for node-2
-* `cbs_float`: the cloud disk for store the blocks database files
-* `secret_id`: secret_id
-* `secret_key`: secret_key
+* `floating_cbs`: the temporary disk ID
+* `deployment_mode`: has to be one of the 2 db-lookup options
+
 
 ### multiversx-node-tool
-This command is for daily operation.
+This command is for routine operations.
 
 #### Parameters
 `command`
