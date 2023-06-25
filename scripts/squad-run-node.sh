@@ -319,7 +319,7 @@ run_squad() {
     # Start Proxy
     if [ -z $(docker ps -q -f "name=proxy") ]; then
         local IP=10.0.0.2
-        screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${IP} --name proxy multiversx/chain-squad-proxy:using
+        screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${IP} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
     else
         echo "===== proxy already run ====="
     fi
