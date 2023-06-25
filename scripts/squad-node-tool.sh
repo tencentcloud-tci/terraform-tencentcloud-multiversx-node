@@ -77,7 +77,7 @@ start_node() {
     if [ "$1" == "proxy" ]; then
         if [ -z $(docker ps -q -f "name=proxy") ]; then
             echo "===== run proxy ====="
-            screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${PROXY["IP"]} --name proxy multiversx/chain-squad-proxy:using
+            screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${PROXY["IP"]} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
         else
             echo "===== proxy already run ====="
         fi
