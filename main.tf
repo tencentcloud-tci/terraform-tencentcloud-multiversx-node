@@ -163,12 +163,10 @@ resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
   }
 }
 
-resource "tencentcloud_tat_invoker" "run" {
-  name         = "deploy node"
-  type         = "SCHEDULE"
-  command_id   = var.need_tat_commands ? tencentcloud_tat_command.node-runner[0].id : data.tencentcloud_tat_command.command.command_set[0].command_id
-  instance_ids = [tencentcloud_lighthouse_instance.lighthouse.id, ]
-  username     = "root"
+resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
+  command_id  = var.need_tat_commands ? tencentcloud_tat_command.node-runner[0].id : data.tencentcloud_tat_command.command.command_set[0].command_id
+  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
+  username    = "root"
   parameters = var.deployment_mode == "lite" ? jsonencode({
     deployment_mode = var.deployment_mode
     secret_id       = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
@@ -188,10 +186,8 @@ resource "tencentcloud_tat_invoker" "run" {
     cbs_2           = resource.tencentcloud_lighthouse_disk.cbs-2[0].id
     cbs_float       = var.floating_cbs
   })
-  schedule_settings {
-    policy      = "ONCE"
-    invoke_time = timeadd(timestamp(), "10s")
-  }
+  timeout = 14400
+
   depends_on = [
     tencentcloud_lighthouse_firewall_rule.firewall_rule,
     tencentcloud_lighthouse_disk_attachment.attach-0,
