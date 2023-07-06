@@ -151,8 +151,8 @@ module "multiversx-observer" {
   #-------disk variables for db-lookup option
   #leave default unless disk becomes full
   cbs0_disk_size = 250 #disk contains node-0 and node-metachain data
-  cbs1_disk_size = 350 #disk contains node-0 and node-metachain data
-  cbs2_disk_size = 200 #disk contains node-0 and node-metachain data
+  cbs1_disk_size = 350 #disk contains node-1
+  cbs2_disk_size = 200 #disk contains node-2
 }
 ```
 
