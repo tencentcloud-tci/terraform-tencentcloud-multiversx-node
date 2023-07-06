@@ -86,19 +86,19 @@ variable "floating_cbs" {
   default     = ""
 }
 
-variable "node0_disk_size" {
+variable "cbs0_disk_size" {
   type        = number
-  description = "Size of the disk used to deploy node-0"
+  description = "Size of the disk used to deploy node-0 and node-metachain"
   default     = 250
 }
 
-variable "node1_disk_size" {
+variable "cbs1_disk_size" {
   type        = number
   description = "Size of the disk used to deploy node-1"
   default     = 350
 }
 
-variable "node2_disk_size" {
+variable "cbs2_disk_size" {
   type        = number
   description = "Size of the disk used to deploy node-2"
   default     = 200

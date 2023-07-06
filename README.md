@@ -94,7 +94,7 @@ module "multiversx-observer-lite" {
   
   #source repo
   source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.2.2" #version of the terraform  module in the registry
+  version = "0.2.5" #version of the terraform  module in the registry
   
   #basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -124,7 +124,7 @@ module "multiversx-observer" {
   
   #source repo
   source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.2.2" #version of the terraform  module in the registry
+  version = "0.2.5" #version of the terraform  module in the registry
   
   #basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -147,6 +147,12 @@ module "multiversx-observer" {
       firewall_rule_description = "proxy port"
     
   }]
+
+  #-------disk variables for db-lookup option
+  #leave default unless disk becomes full
+  cbs0_disk_size = 250 #disk contains node-0 and node-metachain data
+  cbs1_disk_size = 350 #disk contains node-0 and node-metachain data
+  cbs2_disk_size = 200 #disk contains node-0 and node-metachain data
 }
 ```
 
@@ -164,7 +170,7 @@ A few of parameters are needed to deploy the instance
  - `need_tat_commands` set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
  - `floating_cbs` ID of the floater disk which will be used to download and extract the node DB history
  - `extra_firewall_rules` define own custom firewall inbound rule
-
+ - `cbsX_disk_size` where X=0,1,2. this variable defines the size of the disk for the node databases
 For reference here is the [Tencent Cloud Terraform provider](https://registry.terraform.io/providers/tencentcloudstack/tencentcloud/latest/docs/resources/lighthouse_instance)
 
 ### Stack deployment
