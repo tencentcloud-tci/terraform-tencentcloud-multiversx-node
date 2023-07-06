@@ -101,5 +101,5 @@ variable "node1_disk_size" {
 variable "node2_disk_size" {
   type        = number
   description = "Size of the disk used to deploy node-2"
-  default     = 150
+  default     = 200
 }
