@@ -269,9 +269,14 @@ remove_default_firewall_rules() {
 }
 
 run_cis_hardening() {
-    sudo yum install epel-release
-    sudo yum install ansible
-    sudo git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
+    sudo yum -y install epel-release
+    sudo yum -y install ansible
+    sudo yum -y install git
+    sudo yum -y update nss
+    #sudo git config --global http.proxyAuthMethod 'basic'
+    #sudo git config --global https.proxyAuthMethod 'basic'
+    git clone https://github.com/tudorpaultoma/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
+    git checkout fix-all
     sudo ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml
 }
 
