@@ -269,13 +269,18 @@ remove_default_firewall_rules() {
 }
 
 run_cis_hardening() {
-    sudo yum -y install epel-release
-    sudo yum -y install ansible
-    sudo yum -y install git
-    sudo yum -y update nss
+    echo "===== Installing epel-release ... ====="
+    yum -y -q install epel-release
+    echo "===== Installing ansible ... ====="
+    yum -y -q install ansible
+    echo "===== Installing git ... ====="
+    yum -y -q install git
+    echo "===== Installing nss ... ====="
+    yum -y -q update nss
     git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
-    sudo ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml
+    echo "===== Running ansible playbook for CIS OS hardening  ... ====="
+    ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
 }
 
 run_squad() {    
