@@ -1,0 +1,15 @@
+- name: "Custom Hardening / Check Permissions on User Home Directories"
+  become: yes
+  file:
+    path: "/home/lighthouse/"
+    owner: "lighthouse"
+    group: "lighthouse"
+    mode: 0750
+
+- name: "Custom Hardening / Check Permissions on root Home Directory"
+  become: yes
+  file:
+    path: "/root/"
+    owner: "root"
+    group: "root"
+    mode: 0700

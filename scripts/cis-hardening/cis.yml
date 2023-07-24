@@ -1,0 +1,1470 @@
+
+---
+
+- name: Update observers
+  hosts: localhost
+  connection: local
+
+  handlers:
+  - name: "grub / Regenerate the grub configuration"
+    become: yes
+    shell: |
+      update-grub2
+
+  - name: "iptables / Reload iptables Configuration"
+    service:
+      name: iptables
+      state: restarted
+
+  - name: "ssh / Reload sshd configuration"
+    service:
+      name: sshd
+      state: restarted
+
+  - name: "auditd / Reload auditd configuration"  
+    shell: |
+      augenrules --load
+      service auditd restart
+
+  - name: "sysctl / Reload sysctl rules"
+    shell: |
+      sysctl --load
+
+  tasks:
+  - name: Remove audit & telegraf
+    ansible.builtin.yum:
+     name: 
+       - telegraf
+       - auditbeat
+     state: absent
+
+  - name: "Custom Hardening / Set Network Login Access Message"
+    become: yes
+    copy:
+      dest: /etc/issue
+      mode: 0644
+      src: "include/issue.txt"
+    tags: "Level 1"
+
+  - name: "Custom Hardening / Set Login Access Message"
+    become: yes
+    copy:
+      dest: /etc/issue.net
+      mode: 0644
+      src: "include/issue.txt"
+    tags: "Level 1"
+
+  - name: "Custom Hardening / Set Logrotate Max Age"
+    become: yes
+    lineinfile:
+      dest: /etc/logrotate.conf
+      regexp: 'maxage'
+      line: 'maxage 31'
+    tags: "Level 1"
+
+  - name: "Custom Hardening / Set Logrotate Compression"
+    become: yes
+    lineinfile:
+      dest: /etc/logrotate.conf
+      regexp: '.*compress\s*$'
+      line: 'compress'
+    tags: "Level 1"
+
+  - name: "Custom Hardening / Set Logrotate Non-Mailing Behavior"
+    become: yes
+    lineinfile:
+      dest: /etc/logrotate.conf
+      regexp: '.*mail\s*$'
+      line: 'nomail'
+    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Ensure mounting of cramfs is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/cramfs.conf
+      create: yes
+      regexp: 'install '
+      line: 'install cramfs /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure mounting of freevxfs is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/freevxfs.conf
+      create: yes
+      regexp: 'install '
+      line: 'install freevxfs /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure mounting of jffs2 is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/jffs2.conf
+      create: yes
+      regexp: 'install '
+      line: 'install jffs2 /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure mounting of hfs is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/hfs.conf
+      create: yes
+      regexp: 'install '
+      line: 'install hfs /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure mounting of hfsplus is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/hfsplus.conf
+      create: yes
+      regexp: 'install '
+      line: 'install hfsplus /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure mounting of udf is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/udf.conf
+      create: yes
+      regexp: 'install '
+      line: 'install udf /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure DCCP is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/dccp.conf
+      create: yes
+      regexp: 'install '
+      line: 'install dccp /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure SCTP is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/sctp.conf
+      create: yes
+      regexp: 'install '
+      line: 'install sctp /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure RDS is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/rds.conf
+      create: yes
+      regexp: 'install '
+      line: 'install rds /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure TIPC is disabled"
+    become: yes
+    lineinfile:
+      dest: /etc/modprobe.d/tipc.conf
+      create: yes
+      regexp: 'install '
+      line: 'install tipc /bin/true'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set nodev option for /tmp Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab; then
+        sed -ri "s_^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1_tmp\2nodev\3\4_" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+  - name: "CIS hardening Level 1 / Set nosuid option for /tmp Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab; then
+        sed -ri "s_^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1_tmp\2nosuid\3\4_" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set noexec option for /tmp Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab; then
+        sed -ri "s_^(\s*\S+\s+)/tmp(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1_tmp\2noexec\3\4_" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Add nodev Option to /home"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)/home(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab; then
+        sed -ri "s_^(\s*\S+\s+)/home(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1_home\2nodev\3\4_" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Add /dev/shm to fstab"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if ! egrep -q "^(\s*\S+\s+)/dev/shm" /etc/fstab; then
+        echo "tmpfs /dev/shm tmpfs rw,nosuid,nodev,noexec 0 0" >> /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Add nodev Option to /dev/shm Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab && ! egrep -q "^(\s*\S+\s+)/dev/shm\s+.*nodev.*" /etc/fstab; then
+        sed -ri "s^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1\/dev\/shm\2,nodev\3\4/" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Add nosuid Option to /dev/shm Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab && ! egrep -q "^(\s*\S+\s+)/dev/shm\s+.*nosuid.*" /etc/fstab; then
+        sed -ri "s/^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1\/dev\/shm\2,nosuid\3\4/" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Add noexec Option to /dev/shm Partition"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      if egrep -q "^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab && ! egrep -q "^(\s*\S+\s+)/dev/shm\s+.*noexec.*" /etc/fstab; then
+        sed -ri "s/^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1\/dev\/shm\2,noexec\3\4/" /etc/fstab
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Sticky Bit on All World-Writable Directories"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+      files=$(df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null);
+      if [ "x$files" != "x" ]; then
+        echo "$files" | xargs chmod --changes a+t
+      else
+        echo "-unchanged-";
+      fi;
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Verify Red Hat GPG Key is Installed"
+#    become: yes
+#    apt:
+#      name: gpg-pubkey
+#      state: present
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Verify that gpgcheck is Globally Activated"
+#    become: yes
+#    register: shell
+#    changed_when: '"-unchanged-" not in shell.stdout'
+#    shell: |
+#        if egrep -q "^(\s*)gpgcheck\s*=\s*\S+(\s*#.*)?\s*$" /etc/apt.conf; then
+#          sed -ri "s/^(\s*)gpgcheck\s*=\s*\S+(\s*#.*)?\s*$/\1gpgcheck=1\2/" /etc/apt.conf || echo "gpgcheck=1" >> /etc/apt.conf
+#        else
+#          echo "-unchanged-";
+#        fi;
+#    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Determine if grub is used"
+  #   become: yes
+  #   stat:
+  #     path: /boot/grub/grub.cfg
+  #   register: stat_grub
+  #   tags: "Level 1"
+  #
+  # - name: "CIS hardening Level 1 / Set User/Group Owner, Permissions on bootloader config"
+  #   become: yes
+  #   file:
+  #     name: /boot/grub/grub.cfg
+  #     owner: root
+  #     group: root
+  #     mode: og-rwx
+  #   when: stat_grub.stat.exists == True
+  #   tags: "Level 1"
+  #
+  # - name: "CIS hardening Level 1 / Deploy bootloader config"
+  #   include: "include/hardening-grub.yaml"
+  #   when: stat_grub.stat.exists == True
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict Core Dumps"
+    become: yes
+    lineinfile:
+      dest: /etc/security/limits.conf
+      regexp: '^\* hard core '
+      line: '* hard core 0'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict Core Dumps (Sysctl)"
+    become: yes
+    lineinfile:
+      dest: /etc/sysctl.conf
+      regexp: '^(\s*)fs.suid_dumpable\s*='
+      line: 'fs.suid_dumpable=0'
+    notify: "sysctl / Reload sysctl rules"
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Enable Randomized Virtual Memory Region Placement"
+    become: yes
+    lineinfile:
+      dest: /etc/sysctl.conf
+      regexp: '^(\s*)kernel.randomize_va_space\s*='
+      line: 'kernel.randomize_va_space=2'
+    notify: "sysctl / Reload sysctl rules"
+    tags: "Level 1"
+
+
+  - name: "Custom Hardening / Remove unnecessary Redhat packages"
+    become: yes
+    ansible.builtin.yum:
+       name: "{{ packages }}"
+       state: absent
+    vars:
+       packages:
+        - telnet-server
+        - telnet
+        - rsh-server
+        - rsh
+        - ypbind
+        - ypserv
+        - tftp
+        - tftp-server
+        - talk
+        - talk-server
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Daemon umask"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+        if egrep -q "^(\s*)umask\s+\S+(\s*#.*)?\s*$" /etc/sysconfig/init; then
+          sed -ri "s/^(\s*)umask\s+\S+(\s*#.*)?\s*$/\1umask 027\2/" /etc/sysconfig/init || echo "umask 027" >> /etc/sysconfig/init
+        else
+          echo "-unchanged-";
+        fi;
+    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Ensure the X Window system is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: xorg-x11-server-common
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure Avahi Server is not enabled"
+    become: yes
+    ansible.builtin.yum:
+      name: avahi-daemon
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure CUPS is not enabled"
+    become: yes
+    ansible.builtin.yum:
+      name: cups
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure DHCP Server is not enabled"
+    become: yes
+    ignore_errors: yes
+    ansible.builtin.yum:
+      name: 
+        - isc-dhcp-server
+        - isc-dhcp-server-ldap
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Install Network Time Protocol (NTP)"
+    become: yes
+    ansible.builtin.yum:
+      name: ntp
+      state: present
+    tags: "Level 1"
+  
+  # Doesn't apply anymore
+  # - name: "CIS hardening Level 1 / Configure Network Time Protocol (NTP)"
+  #   become: yes
+  #   lineinfile:
+  #     dest: /etc/ntp.conf
+  #     regexp: 'restrict\s+-4\s+'
+  #     line: 'restrict -4 default kod nomodify notrap nopeer noquery'
+  #   tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Configure Network Time Protocol (NTP) for IPv6"
+  #   become: yes
+  #   lineinfile:
+  #     dest: /etc/ntp.conf
+  #     regexp: 'restrict\s+-6\s+'
+  #     line: 'restrict -6 default kod nomodify notrap nopeer noquery'
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure LDAP is not enabled"
+    become: yes
+    ansible.builtin.yum:
+      name: slapd
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure NFS and RPC is not enabled"
+    become: yes
+    ignore_errors: yes
+    ansible.builtin.yum:
+      name: 
+        - nfslock
+        - rpcgssd
+        - rpcbind
+        - rpcidmapd
+        - rpcsvcgssd
+      state: absent
+    tags: "Level 1"
+#    when: allowNFS is not defined or allowNFS is false
+
+  - name: "CIS hardening Level 1 / Ensure DNS server is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: bind
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure FTP server is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: vsftpd
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure HTTP server is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: httpd
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure Dovecot (IMAP and POP3 services) are not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: dovecot
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure Samba is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: samba
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure HTTP Proxy Server is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: squid
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure SNMP Server is not installed"
+    become: yes
+    ansible.builtin.yum:
+      name: net-snmp
+      state: absent
+    tags: "Level 1"
+
+
+#  - name: "CIS hardening Level 1 / Configure Mail Transfer Agent for Local-Only Mode"
+#    become: yes
+#    shell: |
+#      echo Configure\ Mail\ Transfer\ Agent\ for\ Local-Only\ Mode Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: Check for docker
+#    become: yes
+#    register: docker_installed
+#    changed_when: '"-installed-" in docker_installed.stdout'
+#    shell: |
+#      [ "$(dpkg -s docker-ce 2>/dev/null | grep 'Status: install ok installed' | wc -l)" -eq 1 ] && echo "-installed-"
+#      exit 0         
+
+  - name: "CIS hardening Level 1 / Disable Multiple Unsecure Sysctl Configuration (Disable IP Forwarding, Disable Send Packet Redirects, Disable Source Routed Packet Acceptance, Disable ICMP Redirect Acceptance, Disable Secure ICMP Redirect Acceptance)"
+    become: yes
+    lineinfile:
+      dest: /etc/sysctl.conf
+      regexp: '{{ item }}\s*='
+      line: '{{ item }}=0'
+    with_items:
+      - net.ipv4.ip_forward
+      - net.ipv4.conf.all.send_redirects
+      - net.ipv4.conf.default.send_redirects
+      - net.ipv4.conf.all.accept_source_route
+      - net.ipv4.conf.default.accept_source_route
+      - net.ipv4.conf.all.accept_redirects
+      - net.ipv4.conf.default.accept_redirects
+      - net.ipv4.conf.all.secure_redirects
+      - net.ipv4.conf.default.secure_redirects
+    notify: "sysctl / Reload sysctl rules"
+    tags: "Level 1"
+    # when: ipForward is not defined or ipForward is true
+    when: docker_installed is defined and docker_installed is not changed
+
+  - name: "CIS hardening Level 1 / Disable Multiple Unsecure Sysctl Configuration (Disable Send Packet Redirects, Disable Source Routed Packet Acceptance, Disable ICMP Redirect Acceptance, Disable Secure ICMP Redirect Acceptance)"
+    become: yes
+    lineinfile:
+      dest: /etc/sysctl.conf
+      regexp: '{{ item }}\s*='
+      line: '{{ item }}=0'
+    with_items:
+      - net.ipv4.conf.all.send_redirects
+      - net.ipv4.conf.default.send_redirects
+      - net.ipv4.conf.all.accept_source_route
+      - net.ipv4.conf.default.accept_source_route
+      - net.ipv4.conf.all.accept_redirects
+      - net.ipv4.conf.default.accept_redirects
+      - net.ipv4.conf.all.secure_redirects
+      - net.ipv4.conf.default.secure_redirects
+    notify: "sysctl / Reload sysctl rules"
+    tags: "Level 1"
+    # when: ipForward is defined and ipForward is false
+    when: docker_installed is defined and docker_installed is changed
+
+  - name: "CIS hardening Level 1 / Enable Multiple Sysctl Configuration (Log Suspicious Packets, Enable Ignore Broadcast Requests, Enable Bad Error Message Protection, Enable TCP SYN Cookies, Enable RFC-recommended Source Route Validation)"
+    become: yes
+    lineinfile:
+      dest: /etc/sysctl.conf
+      regexp: '{{ item }}\s*='
+      line: '{{ item }}=1'
+    with_items:
+      - net.ipv4.conf.all.log_martians
+      - net.ipv4.conf.default.log_martians
+      - net.ipv4.icmp_echo_ignore_broadcasts
+      - net.ipv4.icmp_ignore_bogus_error_responses
+      - net.ipv4.conf.all.rp_filter
+      - net.ipv4.conf.default.rp_filter
+      - net.ipv4.tcp_syncookies
+    notify: "sysctl / Reload sysctl rules"
+    tags: "Level 1"
+
+
+
+  # - name: "CIS hardening Level 1 / Ensure TCP Wrappers is installed"
+  #   become: yes
+  #   apt:
+  #     name: tcp_wrappers
+  #     state: present
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.allow"
+    become: yes
+    file:
+      name: /etc/hosts.allow
+      mode: 0644
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.deny"
+    become: yes
+    file:
+      name: /etc/hosts.deny
+      mode: 0644
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure Firewall is installed"
+    become: yes
+    ansible.builtin.yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - iptables
+    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Ensure Firewall is active"
+  #   become: yes
+  #   service:
+  #     name: firewalld
+  #     enabled: yes
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Install the rsyslog package"
+    become: yes
+    ansible.builtin.yum:
+      name: rsyslog
+      state: present
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure the rsyslog Service is activated"
+    become: yes
+    service:
+      name: rsyslog
+      enabled: yes
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Create and Set Permissions on rsyslog Log Files"
+    become: yes
+    lineinfile:
+      dest: /etc/rsyslog.conf
+      regexp: '^\$FileCreateMode\s+'
+      line: '$FileCreateMode 0640'
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Configure rsyslog to Send Logs to a Remote Log Host"
+#    become: yes
+#    shell: |
+#      echo Configure\ rsyslog\ to\ Send\ Logs\ to\ a\ Remote\ Log\ Host not configured.
+#    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Enable cron Daemon"
+    become: yes
+    service:
+      name: crond
+      enabled: yes
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Enable anacron Daemon"
+    become: yes
+    ansible.builtin.yum:
+      name: anacron
+      state: present
+    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Set User/Group Owner and Permission on anacrontab"
+  #   become: yes
+  #   file:
+  #     name: "{{ item }}"
+  #     owner: root
+  #     group: root
+  #     mode: og-rwx
+  #   with_items:
+  #     - /etc/anacrontab
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set User/Group Owner and Permission on crontab"
+    become: yes
+    file:
+      name: "{{ item }}"
+      owner: root
+      group: root
+      mode: og-rwx
+    with_items:
+      - /etc/crontab
+      - /etc/cron.hourly
+      - /etc/cron.daily
+      - /etc/cron.weekly
+      - /etc/cron.monthly
+      - /etc/cron.d
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict at to Authorized Users"
+    become: yes
+    file:
+      name: /etc/at.deny
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict at to Authorized Users (2)"
+    become: yes
+    copy:
+      dest: /etc/at.allow
+      owner: root
+      group: root
+      mode: 0600
+      content: ""
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict cron to Authorized Users"
+    become: yes
+    file:
+      name: /etc/cron.deny
+      state: absent
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict cron to Authorized Users (2)"
+    become: yes
+    copy:
+      dest: /etc/cron.allow
+      owner: root
+      group: root
+      mode: 0600
+      content: ""
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set SSH Protocol to 2"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+        if egrep -q "^(\s*)Protocol\s+\S+(\s*#.*)?\s*$" /etc/ssh/sshd_config; then
+          sed -ri "s/^(\s*)Protocol\s+\S+(\s*#.*)?\s*$/\1Protocol 2\2/" /etc/ssh/sshd_config || echo "Protocol 2" >> /etc/ssh/sshd_config
+        else
+          echo "-unchanged-";
+        fi;
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set LogLevel to INFO"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'LogLevel\s+'
+      line: 'LogLevel INFO'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Permissions on /etc/ssh/sshd_config"
+    become: yes
+    file:
+      name: /etc/ssh/sshd_config
+      state: file
+      owner: root
+      group: root
+      mode: 0600
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Disable SSH X11 Forwarding"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'X11Forwarding\s+'
+      line: 'X11Forwarding no'
+    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Set SSH MaxAuthTries to 4 or Less"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'MaxAuthTries\s+'
+      line: 'MaxAuthTries 4'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set SSH IgnoreRhosts to Yes"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'IgnoreRhosts\s+'
+      line: 'IgnoreRhosts yes'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set SSH HostbasedAuthentication to No"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'HostbasedAuthentication\s+'
+      line: 'HostbasedAuthentication no'
+    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Disable SSH Root Login"
+  #   become: yes
+  #   notify: "ssh / Reload sshd configuration"
+  #   lineinfile:
+  #     dest: /etc/ssh/sshd_config
+  #     regexp: 'PermitRootLogin\s+'
+  #     line: 'PermitRootLogin no'
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set SSH PermitEmptyPasswords to No"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'PermitEmptyPasswords\s+'
+      line: 'PermitEmptyPasswords no'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Do Not Allow Users to Set Environment Options"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'PermitUserEnvironment\s+'
+      line: 'PermitUserEnvironment no'
+    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Use Only Approved Cipher in Counter Mode"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'MACs\s+'
+      line: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com'
+    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 1 / Set Idle Timeout Interval for User Login"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'ClientAliveInterval\s+'
+      line: 'ClientAliveInterval 300'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Idle Timeout Interval for User Login (2)"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'ClientAliveCountMax\s+'
+      line: 'ClientAliveCountMax 0'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Ensure SSH LoginGraceTime is set to one minute or less"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'LoginGraceTime\s+'
+      line: 'LoginGraceTime 60'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set SSH Banner"
+    become: yes
+    notify: "ssh / Reload sshd configuration"
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: 'Banner\s+'
+      line: 'Banner /etc/issue.net'
+    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Upgrade Password Hashing Algorithm to SHA-512"
+  #   become: yes
+  #   register: shell
+  #   shell: |
+  #     authconfig --passalgo=sha512 --update
+  #   tags: "Level 1"
+
+
+#  - name: "CIS hardening Level 1 / Set Password Creation Requirement Parameters Using pam_pwquality"
+#    become: yes
+#    register: shell
+#    changed_when: '"-unchanged-" not in shell.stdout'
+#    shell: |
+#      if egrep -q "^(\s*)minlen\s*=\s*\S+(\s*#.*)?\s*$" /etc/security/pwquality.conf; then
+#         sed -ri "s/^(\s*)minlen\s*=\s*\S+(\s*#.*)?\s*$/\minlen=14\2/" /etc/security/pwquality.conf || echo "minlen=14" >> /etc/security/pwquality.conf
+#      else
+#         echo "-unchanged-";
+#      fi;
+#
+#      if egrep -q "^(\s*)dcredit\s*=\s*\S+(\s*#.*)?\s*$" /etc/security/pwquality.conf; then
+#         sed -ri "s/^(\s*)dcredit\s*=\s*\S+(\s*#.*)?\s*$/\dcredit=-1\2/" /etc/security/pwquality.conf || echo "dcredit=-1" >> /etc/security/pwquality.conf
+#      else
+#         echo "-unchanged-";
+#      fi;
+#
+#      if egrep -q "^(\s*)ucredit\s*=\s*\S+(\s*#.*)?\s*$" /etc/security/pwquality.conf; then
+#         sed -ri "s/^(\s*)ucredit\s*=\s*\S+(\s*#.*)?\s*$/\ucredit=-1\2/" /etc/security/pwquality.conf || echo "ucredit=-1" >> /etc/security/pwquality.conf
+#      else
+#         echo "-unchanged-";
+#      fi;
+#
+#      if egrep -q "^(\s*)lcredit\s*=\s*\S+(\s*#.*)?\s*$" /etc/security/pwquality.conf; then
+#         sed -ri "s/^(\s*)lcredit\s*=\s*\S+(\s*#.*)?\s*$/\lcredit=-1\2/" /etc/security/pwquality.conf || echo "lcredit=-1" >> /etc/security/pwquality.conf
+#      else
+#         echo "-unchanged-";
+#      fi;
+#
+#      if egrep -q "^\s*password\s+requisite\s+pam_pwquality.so\s+" /etc/pam.d/system-auth; then
+#         sed -ri "/^\s*password\s+requisite\s+pam_pwquality.so\s+/ { /^\s*password\s+requisite\s+pam_pwquality.so(\s+\S+)*(\s+try_first_pass)(\s+.*)?$/! s/^(\s*password\s+requisite\s+pam_pwquality.so\s+)(.*)$/\1try_first_pass \2/ }" /etc/pam.d/system-auth
+#         sed -ri "/^\s*password\s+requisite\s+pam_pwquality.so\s+/ { /^\s*password\s+requisite\s+pam_pwquality.so(\s+\S+)*(\s+retry=[0-9]+)(\s+.*)?$/! s/^(\s*password\s+requisite\s+pam_pwquality.so\s+)(.*)$/\1retry=3 \2/ }" /etc/pam.d/system-auth
+#         sed -ri "s/(^\s*password\s+requisite\s+pam_pwquality.so(\s+\S+)*\s+)retry=[0-9]+(\s+.*)?$/\1retry=3\3/" /etc/pam.d/system-auth
+#      else
+#         echo "-unchanged-";
+#      fi;
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Limit Password Reuse"
+#    become: yes
+#    shell: |
+#      egrep -q "^\s*password\s+sufficient\s+pam_unix.so(\s+.*)$" /etc/pam.d/common-password && sed -ri "/^\s*password\s+sufficient\s+pam_unix.so\s+/ { /^\s*password\s+sufficient\s+pam_unix.so(\s+\S+)*(\s+remember=[0-9]+)(\s+.*)?$/! s/^(\s*password\s+sufficient\s+pam_unix.so\s+)(.*)$/\1remember=5 \2/ }" /etc/pam.d/common-password && sed -ri "s/(^\s*password\s+sufficient\s+pam_unix.so(\s+\S+)*\s+)remember=[0-9]+(\s+.*)?$/\1remember=5\3/" /etc/pam.d/common-password
+#    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Restrict Access to the su Command"
+    become: yes
+    shell: |
+      egrep -q "^\s*auth\s+required\s+pam_wheel.so(\s+.*)?$" /etc/pam.d/su && sed -ri "/^\s*auth\s+required\s+pam_wheel.so(\s+.*)?$/ { /^\s*auth\s+required\s+pam_wheel.so(\s+\S+)*(\s+use_uid)(\s+.*)?$/! s/^(\s*auth\s+required\s+pam_wheel.so)(\s+.*)?$/\1 use_uid\2/ }" /etc/pam.d/su || echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Set Password Expiration Days"
+#    become: yes
+#    shell: |
+#      egrep -q "^(\s*)PASS_MAX_DAYS\s+\S+(\s*#.*)?\s*$" /etc/login.defs && sed -ri "s/^(\s*)PASS_MAX_DAYS\s+\S+(\s*#.*)?\s*$/\1PASS_MAX_DAYS 90\2/" /etc/login.defs || echo "PASS_MAX_DAYS 90" >> /etc/login.defs
+#      egrep "^[^:]+:[^\!\*]" /etc/shadow | cut -f1 -d ":" | xargs -n1 chage --maxdays 90
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Set Password Change Minimum Number of Days"
+#    become: yes
+#    shell: |
+#      egrep -q "^(\s*)PASS_MIN_DAYS\s+\S+(\s*#.*)?\s*$" /etc/login.defs && sed -ri "s/^(\s*)PASS_MIN_DAYS\s+\S+(\s*#.*)?\s*$/\1PASS_MIN_DAYS 7\2/" /etc/login.defs || echo "PASS_MIN_DAYS 7" >> /etc/login.defs
+#      egrep "^[^:]+:[^\!\*]" /etc/shadow    | cut -f1 -d ":" | xargs -n1 chage --mindays 7
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Set Password Expiring Warning Days"
+#    become: yes
+#    shell: |
+#      egrep -q "^(\s*)PASS_WARN_AGE\s+\S+(\s*#.*)?\s*$" /etc/login.defs && sed -ri "s/^(\s*)PASS_WARN_AGE\s+\S+(\s*#.*)?\s*$/\1PASS_WARN_AGE 7\2/" /etc/login.defs || echo "PASS_WARN_AGE 7" >> /etc/login.defs
+#      egrep "^[^:]+:[^\!\*]" /etc/shadow    | cut -f1 -d ":" | xargs -n1 chage --warndays 7
+#    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Disable System Accounts"
+    become: yes
+    shell: |
+      for user in $(awk -F: '($3 < 1000) {print $1 }' /etc/passwd); do
+      if [ $user != "root" ]
+      then
+        /usr/sbin/usermod -L $user
+        if [ $user != "sync" ] && [ $user != "shutdown" ] && [ $user != "halt" ]
+        then
+          /usr/sbin/usermod -s /usr/sbin/nologin $user
+        fi
+      fi
+      done
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Default Group for root Account"
+    become: yes
+    shell: |
+      usermod -g 0 root
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Default Umask for Users"
+    become: yes
+    lineinfile:
+      dest: /etc/bashrc
+      regexp: '^(\s*)TMOUT='
+      line: 'TMOUT=600'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Default Timeout for Users"
+    become: yes
+    lineinfile:
+      dest: /etc/bashrc
+      regexp: '^(\s*)umask '
+      line: 'umask 027'
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Default umask and shell timeout for Users"
+    become: yes
+    copy:
+      dest: /etc/profile.d/cis.sh
+      mode: 0644
+      owner: root
+      group: root
+      content: |
+        TMOUT=600
+        umask 027
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Lock Inactive User Accounts"
+    become: yes
+    shell: |
+      useradd -D -f 35
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Set Warning Banner for Standard Login Services"
+    become: yes
+    file:
+      name: "{{ item }}"
+      owner: root
+      group: root
+      mode: 0644
+    with_items:
+      - /etc/issue
+      - /etc/issue.net
+    tags: "Level 1"
+
+  # - name: "CIS hardening Level 1 / Remove OS Information from Login Warning Banners"
+  #   become: yes
+  #   register: shell
+  #   shell: |
+  #     sed -ri "s/(\\v|\\r|\\m|\\s)//g" /etc/issue
+  #     sed -ri "s/(\\v|\\r|\\m|\\s)//g" /etc/issue.net
+  #   tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify Permissions on /etc/passwd and /etc/group"
+    become: yes
+    file:
+      name: "{{ item }}"
+      owner: root
+      group: root
+      mode: 0644
+    with_items:
+      - /etc/passwd
+      - /etc/group
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify Permissions on /etc/shadow and /etc/gshadow"
+    become: yes
+    file:
+      name: "{{ item }}"
+      owner: root
+      group: root
+      mode: 0000
+    with_items:
+      - /etc/shadow
+      - /etc/gshadow
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Find Un-owned Files and Directories"
+#    become: yes
+#    shell: |
+#      echo Find\ Un-owned\ Files\ and\ Directories Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Find Un-grouped Files and Directories"
+#    become: yes
+#    shell: |
+#      echo Find\ Un-grouped\ Files\ and\ Directories Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Ensure Password Fields are Not Empty"
+#    become: yes
+#    shell: |
+#      echo Ensure\ Password\ Fields\ are\ Not\ Empty not configured.
+#    tags: "Level 1"
+
+
+
+  - name: "CIS hardening Level 1 / Verify No Legacy &quot;+&quot; Entries Exist in /etc/passwd File"
+    become: yes
+    shell: |
+      sed -ri "/^\+:.*$/ d" /etc/passwd
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify No Legacy &quot;+&quot; Entries Exist in /etc/shadow File"
+    become: yes
+    shell: |
+      sed -ri "/^\+:.*$/ d" /etc/shadow
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Verify No Legacy &quot;+&quot; Entries Exist in /etc/group File"
+    become: yes
+    shell: |
+      sed -ri "/^\+:.*$/ d" /etc/group
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Verify No UID 0 Accounts Exist Other Than root"
+#    become: yes
+#    shell: |
+#      echo Verify\ No\ UID\ 0\ Accounts\ Exist\ Other\ Than\ root not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Ensure root PATH Integrity"
+#    become: yes
+#    shell: |
+#      echo Ensure\ root\ PATH\ Integrity Linux custom object not configured.
+#    tags: "Level 1"
+
+  - name: "CIS hardening Level 1 / Deploy home config"
+    include: "include/hardening-home.yaml"
+    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check User Dot File Permissions"
+#    become: yes
+#    shell: |
+#      echo Check\ User\ Dot\ File\ Permissions Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check Permissions on User .netrc Files"
+#    become: yes
+#    shell: |
+#      echo Check\ Permissions\ on\ User\ .netrc\ Files Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Presence of User .rhosts Files"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Presence\ of\ User\ .rhosts\ Files Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check Groups in /etc/passwd"
+#    become: yes
+#    shell: |
+#      echo Check\ Groups\ in\ /etc/passwd Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check That Users Are Assigned Valid Home Directories"
+#    become: yes
+#    shell: |
+#      echo Check\ That\ Users\ Are\ Assigned\ Valid\ Home\ Directories Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check User Home Directory Ownership"
+#    become: yes
+#    shell: |
+#      echo Check\ User\ Home\ Directory\ Ownership Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Duplicate UIDs"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Duplicate\ UIDs Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Duplicate GIDs"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Duplicate\ GIDs Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check That Reserved UIDs Are Assigned to System Accounts"
+#    become: yes
+#    shell: |
+#      echo Check\ That\ Reserved\ UIDs\ Are\ Assigned\ to\ System\ Accounts not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Duplicate User Names"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Duplicate\ User\ Names Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Duplicate Group Names"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Duplicate\ Group\ Names Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Presence of User .netrc Files"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Presence\ of\ User\ .netrc\ Files Linux custom object not configured.
+#    tags: "Level 1"
+
+#  - name: "CIS hardening Level 1 / Check for Presence of User .forward Files"
+#    become: yes
+#    shell: |
+#      echo Check\ for\ Presence\ of\ User\ .forward\ Files Linux custom object not configured.
+#    tags: "Level 1"
+
+
+  - name: "CIS hardening Level 2 / Install AIDE"
+    become: yes
+    ansible.builtin.yum:
+      name: aide
+      state: present
+    tags: "Level 1"
+
+  - name: "CIS hardening Level 2 / Implement Periodic Execution of File Integrity"
+    become: yes
+    shell: |
+      (crontab -u root -l; crontab -u root -l | egrep -q "^0 5 \* \* \* /usr/sbin/aide --check$" || echo "0 5 * * * /usr/sbin/aide --check" ) | crontab -u root -
+    tags: "Level 2"
+
+  # - name: "CIS hardening Level 2 / Ensure SELinux is installed"
+  #   become: yes
+  #   apt:
+  #     name: libselinux
+  #     state: present
+  #   tags: "Level 2"
+
+#  - name: "CIS hardening Level 2 / Ensure SELinux is not disabled in /boot/grub2/grub.cfg"
+#    become: yes
+#    shell: |
+#	echo Ensure\ SELinux\ is\ not\ disabled\ in\ /boot/grub2/grub.cfg not configured
+#    tags: "Level 2"
+
+#  - name: "CIS hardening Level 2 / Set the SELinux State"
+#    become: yes
+#    shell: |
+#	echo Set\ the\ SELinux\ State not configured.
+#    tags: "Level 2"
+
+#  - name: "CIS hardening Level 2 / Set the SELinux Policy"
+#    become: yes
+#    shell: |
+#	echo echo Set\ the\ SELinux\ Policy not configured.
+#    tags: "Level 2"
+
+
+  - name: "CIS hardening Level 2 / Remove SETroubleshoot"
+    become: yes
+    ansible.builtin.yum:
+      name: setroubleshoot
+      state: absent
+    tags: "Level 2"
+
+
+  - name: "CIS hardening Level 2 / Remove MCS Translation Service (mcstrans)"
+    become: yes
+    ansible.builtin.yum:
+      name: mcstrans
+      state: absent
+    tags: "Level 2"
+
+#  - name: "CIS hardening Level 2 / Check for Unconfined Daemons"
+#    become: yes
+#    shell: |
+#	echo Check\ for\ Unconfined\ Daemons not configured.
+#    tags: "Level 2"
+
+
+  - name: "CIS hardening Level 2 / Ensure xinetd is not enabled"
+    become: yes
+    ansible.builtin.yum:
+      name: xinetd
+      state: absent
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Keep All Auditing Information"
+    become: yes
+    register: shell
+    changed_when: '"-unchanged-" not in shell.stdout'
+    shell: |
+        if egrep -q "^(\s*)max_log_file_action\s*=\s*\S+(\s*#.*)?\s*$" /etc/audit/auditd.conf; then
+          sed -ri "s/^(\s*)max_log_file_action\s*=\s*\S+(\s*#.*)?\s*$/\max_log_file_action = keep_logs\2/" /etc/audit/auditd.conf || echo "max_log_file_action = keep_logs" >> /etc/audit/auditd.conf
+        else
+          echo "-unchanged-";
+        fi;
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Install auditd Service"
+    become: yes
+    ansible.builtin.yum:
+      name: 
+        - audit
+        - audispd-plugins
+      state: present
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Enable auditd Service"
+    become: yes
+    service:
+      name: auditd
+      enabled: yes
+    tags: "Level 2"
+
+  # - name: "CIS hardening Level 2 / Enable Auditing for Processes That Start Prior to auditd"
+  #   become: yes
+  #   register: shell
+  #   changed_when: '"-unchanged-" not in shell.stdout'
+  #   shell: |
+  #       if egrep -q "^(\s*)GRUB_CMDLINE_LINUX\s*=\s*\"([^\"]+)?\"(\s*#.*)?\s*$" /etc/default/grub; then
+  #         sed -ri "/^(\s*)GRUB_CMDLINE_LINUX\s*=\s*\"([^\"]*)?\"(\s*#.*)?\s*$/ {/^(\s*)GRUB_CMDLINE_LINUX\s*=\s*\"([^\"]+\s+)?audit=\S+(\s+[^\"]+)?\"(\s*#.*)?\s*$/! s/^(\s*GRUB_CMDLINE_LINUX\s*=\s*\"([^\"]+)?)(\"(\s*#.*)?\s*)$/\1 audit=1\3/ }" /etc/default/grub && sed -ri "s/^((\s*)GRUB_CMDLINE_LINUX\s*=\s*\"([^\"]+\s+)?)audit=\S+((\s+[^\"]+)?\"(\s*#.*)?\s*)$/\1audit=1\4/" /etc/default/grub || echo "GRUB_CMDLINE_LINUX=\"audit=1\"" >> /etc/default/grub
+  #         grub2-mkconfig -o /boot/grub2/grub.cfg
+  #       else
+  #         echo "-unchanged-";
+  #       fi;
+  #   tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Record Events That Modify Date and Time Information"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-k\s+time-change\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-S\s+stime\s+-k\s+time-change\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+clock_settime\s+-k\s+time-change\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S clock_settime -k time-change" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+clock_settime\s+-k\s+time-change\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S clock_settime -k time-change" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/localtime\s+-p\s+wa\s+-k\s+time-change\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/localtime -p wa -k time-change" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Record Events That Modify User/Group Information"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+
+    shell: |
+      egrep -q "^\s*-w\s+/etc/group\s+-p\s+wa\s+-k\s+identity\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/group -p wa -k identity" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/passwd\s+-p\s+wa\s+-k\s+identity\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/passwd -p wa -k identity" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/gshadow\s+-p\s+wa\s+-k\s+identity\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/gshadow -p wa -k identity" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/shadow\s+-p\s+wa\s+-k\s+identity\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/shadow -p wa -k identity" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/security/opasswd\s+-p\s+wa\s+-k\s+identity\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/security/opasswd -p wa -k identity" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Record Events That Modify the Systems Network Environment"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/issue\s+-p\s+wa\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/issue -p wa -k system-locale" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/issue.net\s+-p\s+wa\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/issue.net -p wa -k system-locale" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/hosts\s+-p\s+wa\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/hosts -p wa -k system-locale" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/network\s+-p\s+wa\s+-k\s+system-locale\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/network -p wa -k system-locale" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Record Events That Modify the Systems Mandatory Access Controls"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/etc/selinux/\s+-p\s+wa\s+-k\s+MAC-policy\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/selinux/ -p wa -k MAC-policy" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Login and Logout Events"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/var/log/faillog\s+-p\s+wa\s+-k\s+logins\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/faillog -p wa -k logins" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/var/log/lastlog\s+-p\s+wa\s+-k\s+logins\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/lastlog -p wa -k logins" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/var/log/tallylog\s+-p\s+wa\s+-k\s+logins\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/tallylog -p wa -k logins" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Session Initiation Information"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/var/run/utmp\s+-p\s+wa\s+-k\s+session\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/run/utmp -p wa -k session" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/var/log/wtmp\s+-p\s+wa\s+-k\s+session\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/wtmp -p wa -k session" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/var/log/btmp\s+-p\s+wa\s+-k\s+session\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/btmp -p wa -k session" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Discretionary Access Control Permission Modification Events"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Unsuccessful Unauthorized Access Attempts to Files"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+access\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+access\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+access\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+access\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Use of Privileged Commands"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      for file in `find / -xdev \( -perm -4000 -o -perm -2000 \) -type f`; do egrep -q "^\s*-a\s+(always,exit|exit,always)\s+-F\s+path=$file\s+-F\s+perm=x\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+privileged\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F path=$file -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged" >> /etc/audit/rules.d/audit.rules; done
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Successful File System Mounts"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+mount\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+mount\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect File Deletion Events by User"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+delete\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=1000\s+-F\s+auid!=4294967295\s+-k\s+delete\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect Changes to System Administration Scope (sudoers)"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/etc/sudoers\s+-p\s+wa\s+-k\s+scope\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/sudoers -p wa -k scope" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/etc/sudoers.d\s+-p\s+wa\s+-k\s+scope\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /etc/sudoers.d -p wa -k scope" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+  
+  - name: "CIS hardening Level 2 / Ensure system administrator command executions (sudo) are collected"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q '\-a always,exit \-F arch=b64 \-C euid!=uid \-F euid=0 \-F auid>=1000 \-F auid!=4294967295 \-S execve \-k actions' /etc/audit/rules.d/audit.rules || echo '-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions' >> /etc/audit/rules.d/audit.rules
+      egrep -q '\-a always,exit \-F arch=b32 \-C euid!=uid \-F euid=0 \-F auid>=1000 \-F auid!=4294967295 \-S execve \-k actions' /etc/audit/rules.d/audit.rules || echo '-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions' >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Collect System Administrator Actions (sudolog)"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/var/log/sudo.log\s+-p\s+wa\s+-k\s+actions\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /var/log/sudo.log -p wa -k actions" >> /etc/audit/rules.d/audit.rules
+    tags: "Level 2"
+
+
+  - name: "CIS hardening Level 2 / Collect Kernel Module Loading and Unloading"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      egrep -q "^\s*-w\s+/sbin/insmod\s+-p\s+x\s+-k\s+modules\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /sbin/insmod -p x -k modules" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/sbin/rmmod\s+-p\s+x\s+-k\s+modules\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /sbin/rmmod -p x -k modules" >> /etc/audit/rules.d/audit.rules
+      egrep -q "^\s*-w\s+/sbin/modprobe\s+-p\s+x\s+-k\s+modules\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-w /sbin/modprobe -p x -k modules" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" && egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+init_module\s+-S\s+delete_module\s+-k\s+modules\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b64 -S init_module -S delete_module -k modules" >> /etc/audit/rules.d/audit.rules
+      uname -p | grep -q "x86_64" || (egrep -q "^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+init_module\s+-S\s+delete_module\s+-k\s+modules\s*(#.*)?$" /etc/audit/rules.d/audit.rules || echo "-a always,exit -F arch=b32 -S init_module -S delete_module -k modules" >> /etc/audit/rules.d/audit.rules)
+    tags: "Level 2"
+
+  - name: "CIS hardening Level 2 / Make the Audit Configuration Immutable"
+    become: yes
+    notify:
+      - auditd / Reload auditd configuration
+      # - auditd service restart
+    shell: |
+      sed -r "/^\s*(#.*)?$/ d" /etc/audit/rules.d/audit.rules | tail -n 1 | egrep -q "^\s*-e 2\s*(#.*)?$" || (sed "/^\s*-e 2\s*(#.*)?$/ d" /etc/audit/rules.d/audit.rules && echo "-e 2" >> /etc/audit/rules.d/audit.rules)
+      augenrules
+    ignore_errors: True
+    tags: "Level 2"
+
+  - name: "CIS hardening / Leave message about successful hardening"
+    become: yes
+    copy:
+      dest: /etc/cis-hardening-complete
+      mode: 0644
+      content: "CIS hardening playbook has been run."

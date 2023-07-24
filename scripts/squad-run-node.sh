@@ -268,7 +268,17 @@ remove_default_firewall_rules() {
     --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
 }
 
-run_squad() {
+run_cis_hardening() {
+    sudo yum -y install epel-release
+    sudo yum -y install ansible
+    sudo yum -y install git
+    sudo yum -y update nss
+    git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
+    cd /home/lighthouse/source-repo/
+    sudo ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml
+}
+
+run_squad() {    
     if [ -f $DEPLOYMENT_MODE_FILE ]; then
         local curr_type=`cat $DEPLOYMENT_MODE_FILE`
         if [ "$1" != $curr_type ]; then
@@ -335,5 +345,9 @@ run_squad() {
 # ------------------------------
 # deployment_mode: lite, db-lookup-hdd, db-lookup-ssd
 echo "===== deploy {{deployment_mode}} ====="
+
+run_cis_hardening
+
 pull_docker_images
+
 run_squad {{deployment_mode}}
