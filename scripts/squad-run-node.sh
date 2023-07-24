@@ -279,7 +279,8 @@ run_cis_hardening() {
     yum -y -q update nss
     git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
-    ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml
+    echo "===== Running ansible playbook for CIS OS hardening  ... ====="
+    ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
 }
 
 run_squad() {    
