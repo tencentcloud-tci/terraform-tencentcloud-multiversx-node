@@ -272,15 +272,15 @@ run_cis_hardening() {
     echo "===== Installing epel-release ... ====="
     yum -y -q install epel-release
     echo "===== Installing ansible ... ====="
-    yum -y -q install ansible
+    yum -y -q install ansible-core
     echo "===== Installing git ... ====="
     yum -y -q install git
     echo "===== Installing nss ... ====="
-    yum -y -q update nss
+    yum -y -q install nss
     git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
     echo "===== Running ansible playbook for CIS OS hardening  ... ====="
-    ansible-playbook --connection=local --inventory 127.0.0.1 /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
+    ansible-playbook /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
 }
 
 run_squad() {    
