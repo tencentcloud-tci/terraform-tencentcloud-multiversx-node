@@ -234,7 +234,7 @@
     changed_when: '"-unchanged-" not in shell.stdout'
     shell: |
       if egrep -q "^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$" /etc/fstab && ! egrep -q "^(\s*\S+\s+)/dev/shm\s+.*nodev.*" /etc/fstab; then
-        sed -ri "s^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1\/dev\/shm\2,nodev\3\4/" /etc/fstab
+        sed -ri "s/^(\s*\S+\s+)\/dev\/shm(\s+\S+\s+\S+)(\s+\S+\s+\S+)(\s*#.*)?\s*$/\1\/dev\/shm\2,nodev\3\4/" /etc/fstab
       else
         echo "-unchanged-";
       fi;
@@ -408,10 +408,10 @@
       state: absent
     tags: "Level 1"
 
-  - name: "CIS hardening Level 1 / Install Network Time Protocol (NTP)"
+  - name: "CIS hardening Level 1 / Install Network Time Protocol (NTP) -> chrony"
     become: yes
     ansible.builtin.yum:
-      name: ntp
+      name: chrony
       state: present
     tags: "Level 1"
   
@@ -584,19 +584,19 @@
   #     state: present
   #   tags: "Level 1"
 
-  - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.allow"
-    become: yes
-    file:
-      name: /etc/hosts.allow
-      mode: 0644
-    tags: "Level 1"
+  # - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.allow"
+  #   become: yes
+  #   file:
+  #     name: /etc/hosts.allow
+  #     mode: 0644
+  #   tags: "Level 1"
 
-  - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.deny"
-    become: yes
-    file:
-      name: /etc/hosts.deny
-      mode: 0644
-    tags: "Level 1"
+  # - name: "CIS hardening Level 1 / Verify Permissions on /etc/hosts.deny"
+  #   become: yes
+  #   file:
+  #     name: /etc/hosts.deny
+  #     mode: 0644
+  #   tags: "Level 1"
 
   - name: "CIS hardening Level 1 / Ensure Firewall is installed"
     become: yes
