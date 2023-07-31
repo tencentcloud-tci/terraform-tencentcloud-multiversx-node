@@ -35,7 +35,7 @@ variable "blueprint_id" {
   description = "Lighthouse blueprint id"
   default     = "lhbp-l63689w4" # docker-OCOS8
   validation {
-    condition     = contains(["lhbp-f1lkcd41", "lhbp-l63689w4"], var.blueprint_id)
+    condition     = contains(["lhbp-l63689w4"], var.blueprint_id)
     error_message = "Please choose the following value: lhbp-f1lkcd41"
   }
 }
