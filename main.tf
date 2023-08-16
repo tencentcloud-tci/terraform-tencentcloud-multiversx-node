@@ -57,7 +57,7 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
 
   # to wait for the TAT agent installation
   provisioner "local-exec" {
-    command = "sleep 15"
+    command = "sleep 30"
   }
 }
 

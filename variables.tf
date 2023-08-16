@@ -33,9 +33,9 @@ variable "bundle_id" {
 variable "blueprint_id" {
   type        = string
   description = "Lighthouse blueprint id"
-  default     = "lhbp-f1lkcd41" # docker-centos7
+  default     = "lhbp-l63689w4" # docker-OCOS8
   validation {
-    condition     = contains(["lhbp-f1lkcd41"], var.blueprint_id)
+    condition     = contains(["lhbp-l63689w4"], var.blueprint_id)
     error_message = "Please choose the following value: lhbp-f1lkcd41"
   }
 }
