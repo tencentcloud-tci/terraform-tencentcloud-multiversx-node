@@ -1,6 +1,7 @@
 # MultiversX Terraform Stack for Observer node types
 
-This solution deploys a Terraform stack for the MultiversX observer nodes on Tencent Cloud. It uses Tencent Cloud Lighthouse as main compute service alongside other necessary resources
+This solution deploys a Terraform stack for the MultiversX observer nodes on Tencent Cloud. It uses Tencent Cloud Lighthouse as main compute service alongside other necessary resources.
+The chosen Operating system is an OpenCloudOS (centOS compatible) with docker pre-installed.
 
 Multiversx documentation: https://github.com/multiversx/mx-chain-observing-squad#observing-squad
 
@@ -92,21 +93,24 @@ Here is a sample
 ```hcl
 module "multiversx-observer-lite" {
   
-  #source repo
+#-------source repo
   source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.2.5" #version of the terraform  module in the registry
+  version = "0.3.0" #version of the terraform  module in the registry
   
-  #basic variables
+  #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
   instance_name = "mx-myobserver" #name of the LH instance
   
-  #deployment variables
+  #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
+  
+  #-------State specific variables
   need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
-
-  #firewall variables
-  ssh_client_cidr = "100.100.100.111/32"  #source ip of the management location (for SSH whitelisting)
+  
+  
+  #-------firewall details
+  ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
   extra_firewall_rules = [{ #specify the public proxy port
     
       protocol                  = "TCP"
@@ -122,22 +126,24 @@ module "multiversx-observer-lite" {
 ```hcl
 module "multiversx-observer" {
   
-  #source repo
+  #-------source repo
   source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.2.5" #version of the terraform  module in the registry
+  version = "0.3.0" #version of the terraform  module in the registry
   
-  #basic variables
+  #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
   instance_name = "mx-myobserver" #name of the LH instance
   
-  #deployment variables
-  deployment_mode = "db-lookup-hdd" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
+  #-------deployment variables
+  deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
-  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
-  floating_cbs = "your-disk-ID" #ID of the floater disk which will be used to download and extract the node DB history
   
-  #firewall variables
-  ssh_client_cidr = "100.100.100.111/32" #source ip of the management location (for SSH whitelisting)
+  #-------State specific variables
+  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  
+  
+  #-------firewall details
+  ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
   extra_firewall_rules = [{ #specify the public proxy port
     
       protocol                  = "TCP"
@@ -147,12 +153,12 @@ module "multiversx-observer" {
       firewall_rule_description = "proxy port"
     
   }]
-
   #-------disk variables for db-lookup option
   #leave default unless disk becomes full
-  cbs0_disk_size = 250 #disk contains node-0 and node-metachain data
-  cbs1_disk_size = 350 #disk contains node-1
-  cbs2_disk_size = 200 #disk contains node-2
+  cbs0_disk_size = 350 #disk contains node-0 and node-metachain data
+  cbs1_disk_size = 450 #disk contains node-1
+  cbs2_disk_size = 300 #disk contains node-2
+  floating_cbs = "lhdisk-jkx4d2w4" #ID of the floater disk which will be used to download and extract the node DB history
 }
 ```
 
