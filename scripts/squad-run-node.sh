@@ -272,6 +272,7 @@ run_cis_hardening() {
     echo "===== Installing epel-release ... ====="
     yum -y -q install epel-release
     echo "===== Installing ansible ... ====="
+    yum -y -q install ansible
     yum -y -q install ansible-core
     echo "===== Installing git ... ====="
     yum -y -q install git
