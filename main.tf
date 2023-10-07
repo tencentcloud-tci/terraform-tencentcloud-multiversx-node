@@ -45,6 +45,45 @@ resource "tencentcloud_tat_command" "node-tool" {
   enable_parameter  = true
 }
 
+resource "tencentcloud_lighthouse_firewall_template" "firewall_template" {
+  template_name = "MultiversX-firewall-template"
+
+  template_rules {
+    protocol                  = "TCP"
+    port                      = "37373-38383"
+    cidr_block                = "0.0.0.0/0"
+    action                    = "ACCEPT"
+    firewall_rule_description = "ports required by node"
+  }
+
+  template_rules {
+    protocol                  = "UDP"
+    port                      = "123"
+    cidr_block                = "0.0.0.0/0"
+    action                    = "ACCEPT"
+    firewall_rule_description = "port required by the NTP service"
+  }
+
+  template_rules {
+    protocol                  = "TCP"
+    port                      = "22"
+    cidr_block                = var.ssh_client_cidr
+    action                    = "ACCEPT"
+    firewall_rule_description = "ssh port"
+  }
+
+  dynamic "template_rules" {
+    for_each = var.extra_firewall_rules
+    content {
+      protocol                  = lookup(template_rules.value, "protocol", "")
+      port                      = lookup(template_rules.value, "port", "")
+      cidr_block                = lookup(template_rules.value, "cidr_block", "")
+      action                    = lookup(template_rules.value, "action", "")
+      firewall_rule_description = lookup(template_rules.value, "firewall_rule_description", "")
+    }
+  }
+}
+
 resource "tencentcloud_lighthouse_instance" "lighthouse" {
   bundle_id    = var.bundle_id
   blueprint_id = var.blueprint_id
@@ -54,6 +93,8 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
 
   instance_name = var.instance_name
   zone          = var.az
+
+  firewall_template_id = tencentcloud_lighthouse_firewall_template.firewall_template.id
 
   # to wait for the TAT agent installation
   provisioner "local-exec" {
@@ -124,45 +165,6 @@ resource "tencentcloud_lighthouse_disk_attachment" "attach-2" {
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
 }
 
-resource "tencentcloud_lighthouse_firewall_rule" "firewall_rule" {
-  instance_id = tencentcloud_lighthouse_instance.lighthouse.id
-
-  firewall_rules {
-    protocol                  = "TCP"
-    port                      = "37373-38383"
-    cidr_block                = "0.0.0.0/0"
-    action                    = "ACCEPT"
-    firewall_rule_description = "ports required by node"
-  }
-
-  firewall_rules {
-    protocol                  = "UDP"
-    port                      = "123"
-    cidr_block                = "0.0.0.0/0"
-    action                    = "ACCEPT"
-    firewall_rule_description = "port required by the NTP service"
-  }
-
-  firewall_rules {
-    protocol                  = "TCP"
-    port                      = "22"
-    cidr_block                = var.ssh_client_cidr
-    action                    = "ACCEPT"
-    firewall_rule_description = "ssh port"
-  }
-
-  dynamic "firewall_rules" {
-    for_each = var.extra_firewall_rules
-    content {
-      protocol                  = lookup(firewall_rules.value, "protocol", "")
-      port                      = lookup(firewall_rules.value, "port", "")
-      cidr_block                = lookup(firewall_rules.value, "cidr_block", "")
-      action                    = lookup(firewall_rules.value, "action", "")
-      firewall_rule_description = lookup(firewall_rules.value, "firewall_rule_description", "")
-    }
-  }
-}
-
 resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
   command_id  = var.need_tat_commands ? tencentcloud_tat_command.node-runner[0].id : data.tencentcloud_tat_command.command.command_set[0].command_id
   instance_id = tencentcloud_lighthouse_instance.lighthouse.id
@@ -189,7 +191,6 @@ resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
   timeout = 14400
 
   depends_on = [
-    tencentcloud_lighthouse_firewall_rule.firewall_rule,
     tencentcloud_lighthouse_disk_attachment.attach-0,
     tencentcloud_lighthouse_disk_attachment.attach-1,
     tencentcloud_lighthouse_disk_attachment.attach-2

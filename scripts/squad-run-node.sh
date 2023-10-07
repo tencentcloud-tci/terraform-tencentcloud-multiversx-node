@@ -309,7 +309,7 @@ run_squad() {
     fi
 
     # remove default firewall rules
-    remove_default_firewall_rules
+    #remove_default_firewall_rules
 
     # create a docker network
     if [ -z $(docker network ls -q -f "name=multiversx-squad") ]; then
