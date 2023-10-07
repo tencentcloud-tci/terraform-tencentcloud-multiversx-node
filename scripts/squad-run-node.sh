@@ -243,31 +243,6 @@ cleanup() {
     unset TENCENTCLOUD_SECRET_KEY
 }
 
-# TODO: delete this function when new version of tencentcloud provider is released
-# Currently, tencentcloud will create default firewall rules.
-# They are useless, need to be removed.
-remove_default_firewall_rules() {
-    echo "===== remove default firewall rules ====="
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol ICMP --FirewallRules.0.Port ALL \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 3389 \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 22 \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 443 \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol TCP --FirewallRules.0.Port 80 \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-    tccli lighthouse DeleteFirewallRules --cli-unfold-argument --InstanceId $LH_ID \
-    --FirewallRules.0.Protocol UDP --FirewallRules.0.Port 3389 \
-    --FirewallRules.0.CidrBlock '0.0.0.0/0' --FirewallRules.0.Action ACCEPT || true
-}
-
 run_cis_hardening() {
     echo "===== Installing epel-release ... ====="
     yum -y -q install epel-release
@@ -307,9 +282,6 @@ run_squad() {
         echo "unsupported node type: $1"
         exit 1
     fi
-
-    # remove default firewall rules
-    #remove_default_firewall_rules
 
     # create a docker network
     if [ -z $(docker network ls -q -f "name=multiversx-squad") ]; then
