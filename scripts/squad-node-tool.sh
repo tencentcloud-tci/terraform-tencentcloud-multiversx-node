@@ -77,7 +77,7 @@ start_node() {
     if [ "$1" == "proxy" ]; then
         if [ -z $(docker ps -q -f "name=proxy") ]; then
             echo "===== run proxy ====="
-            screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${PROXY["IP"]} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
+            screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${PROXY["IP"]} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
         else
             echo "===== proxy already run ====="
         fi
@@ -115,7 +115,7 @@ start_node() {
     if [ -z $(docker ps -q -f "name=squad-$SHARD") ]; then
         echo "===== run node $SHARD ====="
         if [ "$SHARD" == "metachain" ]; then
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
@@ -124,7 +124,7 @@ start_node() {
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         elif [ "$2" == "lite" ]; then
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
@@ -134,7 +134,7 @@ start_node() {
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
             --operation-mode snapshotless-observer
         else
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \

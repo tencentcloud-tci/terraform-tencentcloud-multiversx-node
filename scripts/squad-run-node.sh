@@ -47,7 +47,7 @@ generate_key() {
         echo "===== skip generate key ====="
     else
         echo "===== generate key ====="
-        docker run --rm --mount type=bind,source=$1,destination=/keys --workdir /keys multiversx/chain-keygenerator:using \
+        docker run --privileged --rm --mount type=bind,source=$1,destination=/keys --workdir /keys multiversx/chain-keygenerator:using \
         && sudo chown $(whoami) $1/validatorKey.pem \
         && mv $1/validatorKey.pem $1/$2
     fi
@@ -62,7 +62,7 @@ run() {
     if [ -z $(docker ps -q -f "name=squad-$SHARD") ]; then
         echo "===== run node $SHARD ====="
         if [ "$SHARD" == "metachain" ]; then
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
@@ -71,7 +71,7 @@ run() {
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         elif [ "$6" == "lite" ]; then
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
@@ -81,7 +81,7 @@ run() {
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
             --operation-mode=snapshotless-observer
         else
-            screen -dmS squad-${SHARD} docker run --rm \
+            screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
@@ -335,7 +335,7 @@ run_squad() {
     # Start Proxy
     if [ -z $(docker ps -q -f "name=proxy") ]; then
         local IP=10.0.0.2
-        screen -dmS proxy docker run --rm --network=multiversx-squad --ip=${IP} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
+        screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${IP} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
     else
         echo "===== proxy already run ====="
     fi
