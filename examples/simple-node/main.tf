@@ -1,8 +1,7 @@
 module "multiversx-observer" {
 
   #-------source repo
-  source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.3.0"                                        #version of the terraform  module in the registry
+  source = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
 
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
