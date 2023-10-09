@@ -1,0 +1,14 @@
+name: check-terraform
+run-name: ${{ github.actor }} triggered
+on: [push, pull_request]
+jobs:
+  check_format:
+      runs-on: ubuntu-latest
+      name: Check terraform files are formatted correctly
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+        - name: terraform format
+          uses: dflook/terraform-fmt-check@v1
+        - name: terraform validate
+          uses: dflook/terraform-validate@v1
