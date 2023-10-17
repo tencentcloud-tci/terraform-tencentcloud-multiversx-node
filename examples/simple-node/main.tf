@@ -6,7 +6,7 @@ module "multiversx-observer" {
 
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
-  instance_name = "mvx-myobserver"  #name of the LH instance
+  instance_name = "mvx-myobserver" #name of the LH instance
 
   #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
