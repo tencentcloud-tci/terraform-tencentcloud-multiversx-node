@@ -94,12 +94,12 @@ Here is a sample
 module "multiversx-observer-lite" {
   
 #-------source repo
-  source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.3.0" #version of the terraform  module in the registry
+  source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
+  #version = "0.3.2" #version of the terraform  module in the registry, leave commented if you want the latest
   
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
-  instance_name = "mx-myobserver" #name of the LH instance
+  instance_name = "mvx-myobserver" #name of the LH instance
   
   #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
@@ -127,8 +127,8 @@ module "multiversx-observer-lite" {
 module "multiversx-observer" {
   
   #-------source repo
-  source  = "ritch2022/multiversx-lighthouse/tencentcloud" #terraform module published in the registry
-  version = "0.3.0" #version of the terraform  module in the registry
+  source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
+  #version = "0.3.2" #version of the terraform  module in the registry, leave commented if you want the latest
   
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -186,6 +186,10 @@ Having the configuration done, continue with these commands
  - `terraform apply` select yes, enter
 
 The deployment will take more the for db-archive node types because of the node database which has to be retrieved from the mirror
+
+If you are deploying in the same folder an updated version of the stack please upgrade the modules from source with the command below:
+- `terraform init -upgrade`
+More details [here](https://developer.hashicorp.com/terraform/cli/commands/init#upgrade)
 
 
 ## Deployment details
