@@ -5,7 +5,8 @@ set -e
 SQUAD_BASE_DIR=/data/MyObservingSquad
 FLOAT_MOUNT_DIR=/data/float
 PROXY_BASE_DIR=$SQUAD_BASE_DIR/proxy
-DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/deployment_mode
+DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/.deployment_mode
+DOCKER_IMAGE_NODE_NAME_FILE=$SQUAD_BASE_DIR/.node_image_name
 
 KEY_DIR=/data/keys
 
@@ -15,15 +16,32 @@ CBS_ID_0={{cbs_0}}
 CBS_ID_1={{cbs_1}}
 CBS_ID_2={{cbs_2}}
 CBS_ID_FLOAT={{cbs_float}}
+NETWORK={{network}}
 
 #
 export TENCENTCLOUD_SECRET_ID={{secret_id}}
 export TENCENTCLOUD_SECRET_KEY={{secret_key}}
 export TENCENTCLOUD_REGION=$REGION
 
+set_docker_image_name() {
+    case $NETWORK in
+        "mainnet")
+            DOCKER_IMAGE_NODE_NAME="chain-observer"
+            ;;
+        "testnet")
+            DOCKER_IMAGE_NODE_NAME="chain-testnet"
+            ;;
+        "devnet")
+            DOCKER_IMAGE_NODE_NAME="chain-devnet"
+            ;;
+    esac
+}
+
 pull_docker_images() {
+    set_docker_image_name
+
     local dhgenkey="https://registry.hub.docker.com/v2/repositories/multiversx/chain-keygenerator/tags"
-    local dhobs="https://registry.hub.docker.com/v2/repositories/multiversx/chain-observer/tags"
+    local dhobs="https://registry.hub.docker.com/v2/repositories/multiversx/${DOCKER_IMAGE_NODE_NAME}/tags"
     local dhpro="https://registry.hub.docker.com/v2/repositories/multiversx/chain-squad-proxy/tags"
     
     yum install -y -q jq
@@ -33,8 +51,8 @@ pull_docker_images() {
 
     docker pull -q multiversx/chain-keygenerator:$latgenkey
     docker tag multiversx/chain-keygenerator:$latgenkey multiversx/chain-keygenerator:using
-    docker pull -q multiversx/chain-observer:$latobs
-    docker tag multiversx/chain-observer:$latobs multiversx/chain-observer:using
+    docker pull -q multiversx/${DOCKER_IMAGE_NODE_NAME}:$latobs
+    docker tag multiversx/${DOCKER_IMAGE_NODE_NAME}:$latobs multiversx/${DOCKER_IMAGE_NODE_NAME}:using
     docker pull -q multiversx/chain-squad-proxy:$latpro
     docker tag multiversx/chain-squad-proxy:$latpro multiversx/chain-squad-proxy:using
 }
@@ -67,7 +85,7 @@ run() {
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         elif [ "$6" == "lite" ]; then
@@ -76,7 +94,7 @@ run() {
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
             --operation-mode=snapshotless-observer
@@ -86,7 +104,7 @@ run() {
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         fi
@@ -314,7 +332,8 @@ run_squad() {
 
     # Write observer type
     echo "$1" > $DEPLOYMENT_MODE_FILE
-    
+    echo "$DOCKER_IMAGE_NODE_NAME" > $DOCKER_IMAGE_NODE_NAME_FILE
+
     cleanup
 }
 

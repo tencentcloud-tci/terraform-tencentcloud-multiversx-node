@@ -6,23 +6,29 @@ set -e
 SQUAD_BASE_DIR="/data/MyObservingSquad"
 FLOAT_MOUNT_DIR=/data/float
 PROXY_BASE_DIR=$SQUAD_BASE_DIR/proxy
-DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/deployment_mode
+DEPLOYMENT_MODE_FILE=$SQUAD_BASE_DIR/.deployment_mode
+DOCKER_IMAGE_NODE_NAME_FILE=$SQUAD_BASE_DIR/.node_image_name
 
 NODES=("0" "1" "2" "metachain")
 declare -A NODE_0 NODE_1 NODE_2 NODE_META KEY_GENERATOR PROXY
 
 init() {
-
     if [ ! -f $DEPLOYMENT_MODE_FILE ]; then
-        echo "error: the node has not yet been deployed, please deploy first"
+        echo "error: .deployment_mode file doesn't exist, please deploy first"
         exit 1
     fi
     CURRENT_DEPLOYMENT_MODE=`cat $DEPLOYMENT_MODE_FILE`
 
-    NODE_0=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-0" [Name]="MyObservingSquad-0" [IP]="10.0.0.6" [Port]="10000" [Shard]="0" )
-    NODE_1=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-1" [Name]="MyObservingSquad-1" [IP]="10.0.0.5" [Port]="10001" [Shard]="1" )
-    NODE_2=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-2" [Name]="MyObservingSquad-2" [IP]="10.0.0.4" [Port]="10002" [Shard]="2" )
-    NODE_META=( [Image]="multiversx/chain-observer" [Dir]="$SQUAD_BASE_DIR/node-metachain" [Name]="MyObservingSquad-metachain" [IP]="10.0.0.3" [Port]="10003" [Shard]="metachain" )
+    if [ ! -f $DOCKER_IMAGE_NODE_NAME_FILE ]; then
+        echo "error: .node_image_name file doesn't exist, please deploy first"
+        exit 1
+    fi
+    DOCKER_IMAGE_NODE_NAME=`cat $DOCKER_IMAGE_NODE_NAME_FILE`
+
+    NODE_0=( [Image]="multiversx/${DOCKER_IMAGE_NODE_NAME}" [Dir]="$SQUAD_BASE_DIR/node-0" [Name]="MyObservingSquad-0" [IP]="10.0.0.6" [Port]="10000" [Shard]="0" )
+    NODE_1=( [Image]="multiversx/${DOCKER_IMAGE_NODE_NAME}" [Dir]="$SQUAD_BASE_DIR/node-1" [Name]="MyObservingSquad-1" [IP]="10.0.0.5" [Port]="10001" [Shard]="1" )
+    NODE_2=( [Image]="multiversx/${DOCKER_IMAGE_NODE_NAME}" [Dir]="$SQUAD_BASE_DIR/node-2" [Name]="MyObservingSquad-2" [IP]="10.0.0.4" [Port]="10002" [Shard]="2" )
+    NODE_META=( [Image]="multiversx/${DOCKER_IMAGE_NODE_NAME}" [Dir]="$SQUAD_BASE_DIR/node-metachain" [Name]="MyObservingSquad-metachain" [IP]="10.0.0.3" [Port]="10003" [Shard]="metachain" )
     KEY_GENERATOR=( [Image]="multiversx/chain-keygenerator" )
     PROXY=( [Image]="multiversx/chain-squad-proxy" [Dir]="$SQUAD_BASE_DIR/proxy" [IP]="10.0.0.2" [Shard]="proxy" )
 
@@ -60,11 +66,11 @@ pull_image() {
 #   $1: shard, option: metachain, 0, 1, 2, proxy
 stop_node() {
     if [ "$1" == "proxy" ]; then
-        if [ -n $(docker ps -q -f "name=proxy") ]; then
+        if [[ -n $(docker ps -q -f "name=proxy") ]]; then
             docker container stop proxy
         fi
     else
-        if [ -n $(docker ps -q -f "name=squad-$1") ]; then
+        if [[ -n $(docker ps -q -f "name=squad-$1") ]]; then
             docker container stop squad-$1
         fi
     fi
@@ -75,7 +81,7 @@ stop_node() {
 #   $2: observer_type
 start_node() {
     if [ "$1" == "proxy" ]; then
-        if [ -z $(docker ps -q -f "name=proxy") ]; then
+        if [[ -z $(docker ps -q -f "name=proxy") ]]; then
             echo "===== run proxy ====="
             screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${PROXY["IP"]} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
         else
@@ -112,7 +118,7 @@ start_node() {
             ;;
     esac
 
-    if [ -z $(docker ps -q -f "name=squad-$SHARD") ]; then
+    if [[ -z $(docker ps -q -f "name=squad-$SHARD") ]]; then
         echo "===== run node $SHARD ====="
         if [ "$SHARD" == "metachain" ]; then
             screen -dmS squad-${SHARD} docker run --privileged --rm \
@@ -120,7 +126,7 @@ start_node() {
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         elif [ "$2" == "lite" ]; then
@@ -129,17 +135,17 @@ start_node() {
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
-            --operation-mode snapshotless-observer
+            --operation-mode=snapshotless-observer
         else
             screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
             --mount type=bind,source=${OBSERVER_DIR}/logs,destination=/go/mx-chain-go/cmd/node/logs \
             --mount type=bind,source=${OBSERVER_DIR}/config,destination=/config \
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
-            --name squad-${SHARD} multiversx/chain-observer:using \
+            --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
         fi
@@ -166,22 +172,22 @@ stop_all() {
 }
 
 start_all() {
-    start_node ${NODE_0["Shard"]}
-    sleep 30
-    start_node ${NODE_1["Shard"]}
-    sleep 30
-    start_node ${NODE_2["Shard"]}
-    sleep 30
-    start_node ${NODE_META["Shard"]}
-    sleep 30
-    start_node ${PROXY["Shard"]}
+    start_node ${NODE_0["Shard"]} $CURRENT_DEPLOYMENT_MODE
+    sleep 10
+    start_node ${NODE_1["Shard"]} $CURRENT_DEPLOYMENT_MODE
+    sleep 10
+    start_node ${NODE_2["Shard"]} $CURRENT_DEPLOYMENT_MODE
+    sleep 10
+    start_node ${NODE_META["Shard"]} $CURRENT_DEPLOYMENT_MODE
+    sleep 10
+    start_node ${PROXY["Shard"]} $CURRENT_DEPLOYMENT_MODE
 }
 
 upgrade() {
     # check node image tag
     local image=${NODE_0["Image"]}
     get_image_latest_tag $image
-    if [ -z $(docker images -q $image:$NEW_TAG) ]; then
+    if [[ -z $(docker images -q $image:$NEW_TAG) ]]; then
         echo "===== start node upgrade ====="
         pull_image $image $NEW_TAG
         restart_node ${NODE_0["Shard"]}
@@ -195,7 +201,7 @@ upgrade() {
     # check proxy image tag
     image=${PROXY["Image"]}
     get_image_latest_tag $image
-    if [ -z $(docker images -q $image:$NEW_TAG) ]; then
+    if [[ -z $(docker images -q $image:$NEW_TAG) ]]; then
         echo "===== start proxy upgrade ====="
         pull_image $image $NEW_TAG
         restart_node ${PROXY["Shard"]}
