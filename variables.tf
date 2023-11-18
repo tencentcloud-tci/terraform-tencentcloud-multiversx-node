@@ -103,3 +103,12 @@ variable "cbs2_disk_size" {
   description = "Size of the disk used to deploy node-2"
   default     = 300
 }
+
+variable "network" {
+  type        = string
+  description = "Network"
+  validation {
+    condition     = contains(["mainnet", "testnet", "devnet"], var.network)
+    error_message = "Please choose one of the following network: mainnet, testnet, devnet"
+  }
+}

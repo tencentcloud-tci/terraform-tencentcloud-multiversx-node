@@ -31,6 +31,17 @@ resource "tencentcloud_tat_command" "node_runner" {
   username          = "root"
   working_directory = "/root"
   enable_parameter  = true
+  default_parameters = jsonencode({
+    "lighthouse_id" : "",
+    "network" : "",
+    "deployment_mode" : "",
+    "secret_id" : "",
+    "secret_key" : "",
+    "cbs_0" : "",
+    "cbs_1" : "",
+    "cbs_2" : "",
+    "cbs_float" : ""
+  })
 }
 
 resource "tencentcloud_tat_command" "node_tool" {
@@ -43,6 +54,9 @@ resource "tencentcloud_tat_command" "node_tool" {
   username          = "root"
   working_directory = "/root"
   enable_parameter  = true
+  default_parameters = jsonencode({
+    "command" : ""
+  })
 }
 
 resource "tencentcloud_lighthouse_firewall_template" "firewall_template" {
@@ -178,6 +192,7 @@ resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
     cbs_1           = ""
     cbs_2           = ""
     cbs_float       = ""
+    network         = var.network
     }) : jsonencode({
     deployment_mode = var.deployment_mode
     secret_id       = data.external.env.result["TENCENTCLOUD_SECRET_ID"]
@@ -187,6 +202,7 @@ resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
     cbs_1           = resource.tencentcloud_lighthouse_disk.cbs_1[0].id
     cbs_2           = resource.tencentcloud_lighthouse_disk.cbs_2[0].id
     cbs_float       = var.floating_cbs
+    network         = var.network
   })
   timeout = 14400
 
