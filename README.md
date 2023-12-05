@@ -95,7 +95,6 @@ module "multiversx-observer-lite" {
   
 #-------source repo
   source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
-  #version = "0.3.2" #version of the terraform  module in the registry, leave commented if you want the latest
   
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -104,10 +103,14 @@ module "multiversx-observer-lite" {
   #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
+  blueprint_id  = "lhbp-a7oxy3em" #the id of the blueprint, we recommend using OpenCloudOS8 with docker
+
   
   #-------State specific variables
   need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
   
+  #-------Chain specific variables
+  network = "mainnet" #choose between mainnet, testnet, devnet
   
   #-------firewall details
   ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
@@ -128,7 +131,6 @@ module "multiversx-observer" {
   
   #-------source repo
   source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
-  #version = "0.3.2" #version of the terraform  module in the registry, leave commented if you want the latest
   
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -137,11 +139,14 @@ module "multiversx-observer" {
   #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
+  blueprint_id  = "lhbp-a7oxy3em" #the id of the blueprint, we recommend using OpenCloudOS8 with docker
   
   #-------State specific variables
   need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
   
-  
+  #-------Chain specific variables
+  network = "mainnet" #choose between mainnet, testnet, devnet
+
   #-------firewall details
   ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
   extra_firewall_rules = [{ #specify the public proxy port
@@ -165,7 +170,6 @@ module "multiversx-observer" {
 ### Main parameters
 A few of parameters are needed to deploy the instance
  - `source` is the terraform registry module name
- - `version` the version which you deploy (check registry for the latest)
  - `az` is the availability zone within the selected region
  - `instance_name` give a name to your node
  - `purchase_period` the purchase period in months
@@ -174,6 +178,7 @@ A few of parameters are needed to deploy the instance
  - `blueprint_id` used for selection of the instance image, leave default. [Other blueprints](https://www.tencentcloud.com/document/product/1103/42503)
  - `ssh_client_cidr` source ip of the management location (for SSH whitelisting)
  - `need_tat_commands` set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+ - `network` choose between mainnet, testnet, devnet. This selection will switch the MultiversX network.
  - `floating_cbs` ID of the floater disk which will be used to download and extract the node DB history
  - `extra_firewall_rules` define own custom firewall inbound rule
  - `cbsX_disk_size` where X=0,1,2. this variable defines the size of the disk for the node databases
