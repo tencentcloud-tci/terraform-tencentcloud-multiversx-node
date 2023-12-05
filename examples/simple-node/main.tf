@@ -2,19 +2,19 @@ module "multiversx-observer" {
 
   #-------source repo
   source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
-  #version = "0.3.2" #version of the terraform  module in the registry, leave commented if you want the latest
 
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
   instance_name = "mvx-myobserver" #name of the LH instance
+  blueprint_id  = "lhbp-a7oxy3em"
 
   #-------deployment variables
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1      #the valability of the purchase, in months
 
   #-------State specific variables
-  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
-
+  need_tat_commands = true      #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  network           = "mainnet" #choose between mainnet, testnet, devnet
 
   #-------firewall details
   ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)

@@ -113,9 +113,11 @@ run() {
     fi
 }
 
-init_env_lite() {
+init_env() {
+    echo "===== Installing epel-release ... ====="
+    yum -y -q install epel-release
+    echo "===== Installing python / screen / tccli ... ====="
     yum install -y -q python3 screen
-    # install tccli
     python3 -m pip install pip
     pip3 install -q tccli
 }
@@ -142,13 +144,6 @@ init_env_db-lookup() {
     echo "CBS_ID_1=$CBS_ID_1"
     echo "CBS_ID_2=$CBS_ID_2"
     echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
-    # install python p7zip
-    # yum install -y https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm
-    yum install -y -q python3 screen
-
-    # install tccli
-    python3 -m pip install pip
-    pip3 install -q tccli
 }
 
 # input:
@@ -262,11 +257,8 @@ cleanup() {
 }
 
 run_cis_hardening() {
-    echo "===== Installing epel-release ... ====="
-    yum -y -q install epel-release
     echo "===== Installing ansible ... ====="
-    yum -y -q install ansible
-    yum -y -q install ansible-core
+    sudo pip3 install ansible
     echo "===== Installing git ... ====="
     yum -y -q install git
     echo "===== Installing nss ... ====="
@@ -291,7 +283,6 @@ run_squad() {
     
     # init dir
     if [ "$1" == "lite" ]; then
-        init_env_lite
         init_dir_lite
     elif [[ "$1" == "db-lookup-ssd" || "$1" == "db-lookup-hdd" ]]; then
         init_env_db-lookup
@@ -342,6 +333,8 @@ run_squad() {
 # ------------------------------
 # deployment_mode: lite, db-lookup-hdd, db-lookup-ssd
 echo "===== deploy {{deployment_mode}} ====="
+
+init_env
 
 run_cis_hardening
 
