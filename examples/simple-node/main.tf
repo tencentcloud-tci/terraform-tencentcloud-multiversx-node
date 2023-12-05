@@ -18,7 +18,7 @@ module "multiversx-observer" {
 
   #-------firewall details
   ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
-  extra_firewall_rules = [{           #specify the public proxy port
+  extra_firewall_rules = [{         #specify the public proxy port
 
     protocol                  = "TCP"
     port                      = "8079"
