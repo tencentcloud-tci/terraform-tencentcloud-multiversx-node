@@ -1,7 +1,7 @@
 module "multiversx-observer" {
 
   #-------source repo
-  source = "/Users/tudortoma/Documents/Projects/terraform-tencentcloud-multiversx-node" #terraform module published in the registry
+  source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
 
   #-------basic variables
   az            = "eu-frankfurt-1" #availability zone to deploy
@@ -13,8 +13,8 @@ module "multiversx-observer" {
   purchase_period = 1      #the valability of the purchase, in months
 
   #-------State specific variables
-  need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
-  network = "mainnet" #choose between mainnet, testnet, devnet
+  need_tat_commands = true      #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  network           = "mainnet" #choose between mainnet, testnet, devnet
 
   #-------firewall details
   ssh_client_cidr = "2.207.56.162/32" #source ip of the management location (for SSH whitelisting)
