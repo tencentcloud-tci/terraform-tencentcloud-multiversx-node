@@ -1,1 +1,0 @@
-Deploy a single lite node.
