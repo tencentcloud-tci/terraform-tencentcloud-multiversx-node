@@ -10,7 +10,7 @@ variable "az" {
 
 variable "need_tat_commands" {
   type        = bool
-  description = "If need to create the TAT commands which contains multiversx-node-runner and multiversx-node-tool"
+  description = "If the TAT commands (multiversx-node-runner and multiversx-node-tool) need to be created"
   default     = true
 }
 

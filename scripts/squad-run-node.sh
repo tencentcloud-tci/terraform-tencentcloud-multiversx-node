@@ -1,5 +1,6 @@
 #!/bin/bash
-# for centos 7
+
+# this script is suitable for centOS based distributions
 
 set -e
 SQUAD_BASE_DIR=/data/MyObservingSquad
@@ -58,13 +59,13 @@ pull_docker_images() {
 }
 
 # input:
-#   $1: dir to store key file
-#   $2: name of key file
+#   $1: dir to store the key file
+#   $2: name of the key file
 generate_key() {
     if [ -f "$1/$2" ]; then
-        echo "===== skip generate key ====="
+        echo "===== Skipping key generation ====="
     else
-        echo "===== generate key ====="
+        echo "===== Generating key ====="
         docker run --privileged --rm --mount type=bind,source=$1,destination=/keys --workdir /keys multiversx/chain-keygenerator:using \
         && sudo chown $(whoami) $1/validatorKey.pem \
         && mv $1/validatorKey.pem $1/$2
@@ -78,7 +79,7 @@ run() {
     local P2P_PORT=$4
     local IP=$5
     if [ -z $(docker ps -q -f "name=squad-$SHARD") ]; then
-        echo "===== run node $SHARD ====="
+        echo "===== Running node $SHARD ====="
         if [ "$SHARD" == "metachain" ]; then
             screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
@@ -87,7 +88,9 @@ run() {
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
             --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
-            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
+            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
+            --operation-mode db-lookup-extension
+
         elif [ "$6" == "lite" ]; then
             screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
@@ -106,20 +109,25 @@ run() {
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
             --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
-            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
+            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
+            --operation-mode db-lookup-extension
         fi
     else
-        echo "===== node $SHARD already run ====="
+        echo "===== INFO: the node $SHARD is already running ====="
     fi
 }
 
 init_env() {
+    echo "===== Initialising environment ====="
     echo "===== Installing epel-release ... ====="
     yum -y -q install epel-release
     echo "===== Installing python / screen / tccli ... ====="
     yum install -y -q python3 screen
     python3 -m pip install pip
     pip3 install -q tccli
+    pip3 install --upgrade tccli
+    cp /usr/local/bin/tccli /usr/bin/
+
 }
 
 init_dir_lite() {
@@ -138,7 +146,7 @@ init_dir_lite() {
 }
 
 init_env_db-lookup() {
-    echo "===== init env db-lookup ====="
+    echo "===== Initialising environment for db-lookup extension ====="
     echo "LH_ID=$LH_ID"
     echo "CBS_ID_0=$CBS_ID_0"
     echo "CBS_ID_1=$CBS_ID_1"
@@ -152,28 +160,28 @@ init_env_db-lookup() {
 attach_and_mount() {
     if [[ -z `df | grep $2` ]]; then
         if [[ -n `ls -la /dev/disk/by-id/ |grep ${1#*-}` ]]; then
-            echo "===== skip attach $1 ====="
+            echo "===== INFO: skipping attachament of $1 ====="
         else
-            echo "===== attach $1 ====="
+            echo "===== Attaching $1 ====="
             tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $LH_ID
             sleep 15
         fi
         local tmp=`ls -la /dev/disk/by-id/ |grep ${1#*-}`
         local cbs_dev=${tmp##*/}
-        echo "===== mount cbs_dev=$cbs_dev to $2 ====="
+        echo "===== Mounting cbs_dev=$cbs_dev to $2 ====="
         if [[ -n `parted -s /dev/$cbs_dev print 2>&1|grep -i error` ]]; then
-            echo "do formt"
+            echo "===== Formatting $1 ====="
             mkfs -t ext4 /dev/$cbs_dev
         fi
         mkdir -p $2
         mount /dev/$cbs_dev $2
 
         if [ "$2" != "$FLOAT_MOUNT_DIR" ]; then
-            echo "===== config /etc/fstab ====="
+            echo "===== Configuring /etc/fstab for $1 ====="
             echo "/dev/disk/by-id/virtio-disk-${1#*-} $2 ext4 defaults 0 0" >> /etc/fstab
         fi
     else
-        echo "===== $1 already mount to $2 ====="
+        echo "===== INFO: $1 already mounted to $2 ====="
     fi
 }
 
@@ -191,7 +199,7 @@ init_dir_db-lookup() {
 
     # attach and mount the disks
     # format
-    echo "===== attach and format disks ====="
+    echo "===== Disk attaching and formatting ====="
     echo "TENCENTCLOUD_SECRET_ID=$TENCENTCLOUD_SECRET_ID"
     echo "TENCENTCLOUD_SECRET_KEY=$TENCENTCLOUD_SECRET_KEY"
     attach_and_mount $CBS_ID_0 $CBS_0_DIR
@@ -210,7 +218,7 @@ init_dir_db-lookup() {
     mkdir -p $META_NODE_DIR/{logs,config}
     generate_key "$META_NODE_DIR/config" "observerKey_metachain.pem"
 
-    echo "===== download data files ====="
+    echo "===== Downloading data files ====="
     local ex="tgz"
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
@@ -227,7 +235,7 @@ init_dir_db-lookup() {
     fi
 
     # extract block databases in parallel processes
-    echo "===== extract database files ====="
+    echo "===== Extracting database files ====="
     if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
         tar xf $FLOAT_MOUNT_DIR/node-0.$ex -C $NODE_0_DIR &
     fi
@@ -246,7 +254,7 @@ init_dir_db-lookup() {
 
 cleanup() {
     # clean up
-    echo "===== clean up ====="
+    echo "===== Cleaning up ====="
     if [ "{{deployment_mode}}" != "lite" ]; then
         umount $FLOAT_MOUNT_DIR
         tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT || true
@@ -257,26 +265,29 @@ cleanup() {
 }
 
 run_cis_hardening() {
-    echo "===== Installing ansible ... ====="
+    echo "===== Begin OS hardening ====="
+    echo "===== 1. Installing ansible ... ====="
     sudo pip3 install ansible
-    echo "===== Installing git ... ====="
+    echo "===== 2. Installing git ... ====="
     yum -y -q install git
-    echo "===== Installing nss ... ====="
+    echo "===== 3. Installing nss ... ====="
     yum -y -q install nss
-    git clone https://github.com/ritch2022/terraform-tencentcloud-multiversx-lighthouse.git /home/lighthouse/source-repo/
+    echo "===== 4. Cloning repo ... ====="
+    git clone https://github.com/tencentcloud-tci/terraform-tencentcloud-multiversx-node.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
-    echo "===== Running ansible playbook for CIS OS hardening  ... ====="
+    echo "===== 5. Running ansible playbook for CIS OS hardening  ... ====="
     ansible-playbook /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
+    echo "===== End OS hardening ====="
 }
 
 run_squad() {    
     if [ -f $DEPLOYMENT_MODE_FILE ]; then
         local curr_type=`cat $DEPLOYMENT_MODE_FILE`
         if [ "$1" != $curr_type ]; then
-            echo "===== fatal error, different deployment mode: input=$1 current=$curr_type"
+            echo "===== ERROR: deployment mode mismatch -> input=$1 current=$curr_type"
             exit 1
         else
-            echo "===== already deployed, deployment mode: $1====="
+            echo "===== INFO: squad already deployed, deployment mode: $1 ====="
             exit 0
         fi
     fi
@@ -288,7 +299,7 @@ run_squad() {
         init_env_db-lookup
         init_dir_db-lookup
     else
-        echo "unsupported node type: $1"
+        echo "===== ERROR: unsupported node type: $1 ====="
         exit 1
     fi
 
@@ -318,7 +329,7 @@ run_squad() {
         local IP=10.0.0.2
         screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${IP} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
     else
-        echo "===== proxy already run ====="
+        echo "===== INFO: proxy service already running ====="
     fi
 
     # Write observer type
@@ -331,8 +342,8 @@ run_squad() {
 # ------------------------------
 # main
 # ------------------------------
-# deployment_mode: lite, db-lookup-hdd, db-lookup-ssd
-echo "===== deploy {{deployment_mode}} ====="
+
+echo "===== Deploying {{deployment_mode}} ====="
 
 init_env
 

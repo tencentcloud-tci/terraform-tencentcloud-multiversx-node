@@ -1,5 +1,6 @@
 #!/bin/bash
-# for centos 7
+
+# this script is suitable for centOS based distributions
 
 set -e
 
@@ -14,13 +15,13 @@ declare -A NODE_0 NODE_1 NODE_2 NODE_META KEY_GENERATOR PROXY
 
 init() {
     if [ ! -f $DEPLOYMENT_MODE_FILE ]; then
-        echo "error: .deployment_mode file doesn't exist, please deploy first"
+        echo "ERROR: .deployment_mode file doesn't exist, please deploy first"
         exit 1
     fi
     CURRENT_DEPLOYMENT_MODE=`cat $DEPLOYMENT_MODE_FILE`
 
     if [ ! -f $DOCKER_IMAGE_NODE_NAME_FILE ]; then
-        echo "error: .node_image_name file doesn't exist, please deploy first"
+        echo "ERROR: .node_image_name file doesn't exist, please deploy first"
         exit 1
     fi
     DOCKER_IMAGE_NODE_NAME=`cat $DOCKER_IMAGE_NODE_NAME_FILE`
@@ -57,7 +58,7 @@ get_image_latest_tag() {
 #   $1: image uri, for example: multiversx/chain-observer
 #   $2: image tag, for example: v1.4.14.0
 pull_image() {
-    echo "===== pull image: $1:$2 ====="
+    echo "===== Pulling image: $1:$2 ====="
     docker pull $1:$2
     docker tag $1:$2 $1:using
 }
@@ -82,10 +83,10 @@ stop_node() {
 start_node() {
     if [ "$1" == "proxy" ]; then
         if [[ -z $(docker ps -q -f "name=proxy") ]]; then
-            echo "===== run proxy ====="
+            echo "===== Running proxy service ====="
             screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${PROXY["IP"]} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
         else
-            echo "===== proxy already run ====="
+            echo "===== INFO: proxy service already running ====="
         fi
         return 0
     fi
@@ -119,7 +120,7 @@ start_node() {
     esac
 
     if [[ -z $(docker ps -q -f "name=squad-$SHARD") ]]; then
-        echo "===== run node $SHARD ====="
+        echo "===== Running node $SHARD ====="
         if [ "$SHARD" == "metachain" ]; then
             screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
@@ -128,7 +129,8 @@ start_node() {
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
             --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
-            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
+            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
+            --operation-mode db-lookup-extension
         elif [ "$2" == "lite" ]; then
             screen -dmS squad-${SHARD} docker run --privileged --rm \
             --mount type=bind,source=${OBSERVER_DIR}/db,destination=/go/mx-chain-go/cmd/node/db \
@@ -147,17 +149,18 @@ start_node() {
             --publish ${P2P_PORT}:37373 --network=multiversx-squad --ip=${IP} \
             --name squad-${SHARD} multiversx/${DOCKER_IMAGE_NODE_NAME}:using \
             --destination-shard-as-observer=${SHARD} \
-            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}"
+            --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
+            --operation-mode db-lookup-extension
         fi
     else
-        echo "===== node $SHARD already run ====="
+        echo "===== INFO: node $SHARD already running ====="
     fi
 }
 
 # input:
 #   $1: shard, option: metachain, 0, 1, 2, proxy
 restart_node() {
-    echo "===== restart node: $1 ====="
+    echo "===== Restarting node: $1 ====="
     stop_node $1
     sleep 2
     start_node $1 $CURRENT_DEPLOYMENT_MODE
@@ -188,41 +191,28 @@ upgrade() {
     local image=${NODE_0["Image"]}
     get_image_latest_tag $image
     if [[ -z $(docker images -q $image:$NEW_TAG) ]]; then
-        echo "===== start node upgrade ====="
+        echo "===== Starting node upgrade ====="
         pull_image $image $NEW_TAG
         restart_node ${NODE_0["Shard"]}
         restart_node ${NODE_1["Shard"]}
         restart_node ${NODE_2["Shard"]}
         restart_node ${NODE_META["Shard"]}
     else
-        echo "===== skip node upgrade ====="
+        echo "===== Skipping node upgrade, image already latest ====="
     fi
 
     # check proxy image tag
     image=${PROXY["Image"]}
     get_image_latest_tag $image
     if [[ -z $(docker images -q $image:$NEW_TAG) ]]; then
-        echo "===== start proxy upgrade ====="
+        echo "===== Starting proxy upgrade ====="
         pull_image $image $NEW_TAG
         restart_node ${PROXY["Shard"]}
     else
-        echo "===== skip proxy upgrade ====="
+        echo "===== Skip proxy upgrade, image already latest ====="
     fi
 }
 
-destroy() {
-    stop_all
-    if [[ "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-ssd" || "$CURRENT_DEPLOYMENT_MODE" == "db-lookup-hdd" ]]; then
-        # umount
-        umount $CBS_0_DIR && rm -rf $CBS_0_DIR
-        umount $CBS_1_DIR && rm -rf $CBS_1_DIR
-        umount $CBS_2_DIR && rm -rf $CBS_2_DIR
-
-        # TODO: detach CBS instances
-    fi
-    
-    rm -rf $SQUAD_BASE_DIR
-}
 
 # input:
 #   $1: command: upgrade_all, stop_all, start_all, switch
@@ -233,10 +223,8 @@ run_command() {
         stop_all
     elif [ "$1" == "start_all" ]; then
         start_all
-    elif [ "$1" == "destroy" ]; then
-        destroy
     else
-        echo "unsupported command: $1"
+        echo "ERROR: unsupported command: $1"
         exit 1
     fi
 }
