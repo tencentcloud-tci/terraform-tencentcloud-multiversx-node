@@ -48,7 +48,7 @@ resource "tencentcloud_tat_command" "node_tool" {
   count             = local.need_tat
   command_name      = "multiversx-node-tool"
   content           = file(join("", [path.module, "/scripts/squad-node-tool.sh"]))
-  description       = "node tool, you can use it to upgrade, start, stop and restart service"
+  description       = "An efficient process tool, you can use it for upgrading, starting, stopping or restarting the node services"
   command_type      = "SHELL"
   timeout           = 3600
   username          = "root"
@@ -110,7 +110,7 @@ resource "tencentcloud_lighthouse_instance" "lighthouse" {
 
   firewall_template_id = tencentcloud_lighthouse_firewall_template.firewall_template.id
 
-  # to wait for the TAT agent installation
+  # waiting for the TAT agent installation
   provisioner "local-exec" {
     command = "sleep 30"
   }
