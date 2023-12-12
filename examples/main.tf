@@ -1,8 +1,8 @@
 module "multiversx-observer" {
 
   #-------source repo
-  #source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
-  source = "/Users/tudortoma/Documents/Projects/terraform-tencentcloud-multiversx-node"
+  source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
+
   #-------basic variables
   az            = "eu-frankfurt-1"       #availability zone to deploy
   instance_name = "mvx-observer-testnet" #name of the LH instance
