@@ -5,7 +5,7 @@ module "multiversx-observer" {
 
   #-------basic variables
   az            = "eu-frankfurt-1"       #availability zone to deploy
-  instance_name = "mvx-observer-testnet" #name of the LH instance
+  instance_name = "mvx-observer-devnet" #name of the LH instance
   blueprint_id  = "lhbp-a7oxy3em"
 
   #-------deployment variables
@@ -13,8 +13,8 @@ module "multiversx-observer" {
   purchase_period = 1               #the valability of the purchase, in months
 
   #-------State specific variables
-  need_tat_commands = false     #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
-  network           = "testnet" #choose between mainnet, testnet, devnet
+  need_tat_commands = true      #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  network           = "devnet" #choose between mainnet, testnet, devnet
 
   #-------firewall details
   ssh_client_cidr = "2.222.22.2/32" #source ip of the management location (for SSH whitelisting)
