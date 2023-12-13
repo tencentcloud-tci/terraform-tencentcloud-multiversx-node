@@ -119,9 +119,9 @@ run() {
 
 init_env() {
     echo "===== Initialising environment ====="
-    echo "===== Installing epel-release ... ====="
+    echo "===== Installing epel-release ====="
     yum -y -q install epel-release
-    echo "===== Installing python / screen / tccli ... ====="
+    echo "===== Installing python / screen / tccli ====="
     yum install -y -q python3 screen
     python3 -m pip install pip
     pip3 install -q tccli
@@ -185,6 +185,59 @@ attach_and_mount() {
     fi
 }
 
+set_archive_name() {
+    case $NETWORK in
+        "mainnet")
+            ARCHIVE_NAME_="node"
+            ;;
+        "testnet")
+            ARCHIVE_NAME_="testnet-node"
+            ;;
+        "devnet")
+            ARCHIVE_NAME_="devnet-node"
+            ;;
+    esac
+}
+
+download_snapshots() {
+    echo "===== Downloading block snapshots  ====="
+    local ex="tgz"
+    set_archive_name
+    # download latest block DBs
+    if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
+    fi
+    if [ ! -f $FLOAT_MOUNT_DIR/node-1.$ex ]; then
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-1.$ex -P $FLOAT_MOUNT_DIR
+    fi
+    if [ ! -f $FLOAT_MOUNT_DIR/node-2.$ex ]; then
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-2.$ex -P $FLOAT_MOUNT_DIR
+    fi
+    if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
+    fi
+}
+
+extract_snapshots() {
+    # extract block databases in parallel processes
+    echo "===== Extracting block snapshots ====="
+    set_archive_name
+
+    if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
+        tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-0.$ex -C $NODE_0_DIR &
+    fi
+    if [[ ! -d $NODE_1_DIR/db/db/1/Static || ! -d $NODE_1_DIR/db/1/Static ]]; then
+        tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-1.$ex -C $NODE_1_DIR &
+    fi
+    if [[ ! -d $NODE_2_DIR/db/db/1/Static || ! -d $NODE_2_DIR/db/1/Static ]]; then
+        tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-2.$ex -C $NODE_2_DIR &
+    fi
+    if [[ ! -d $META_NODE_DIR/db/db/1/Static || ! -d $META_NODE_DIR/db/1/Static ]]; then
+        tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-metachain.$ex -C $META_NODE_DIR &
+    fi
+    wait
+}
+
 
 init_dir_db-lookup() {
     CBS_0_DIR=$SQUAD_BASE_DIR/cbs-0
@@ -218,37 +271,9 @@ init_dir_db-lookup() {
     mkdir -p $META_NODE_DIR/{logs,config}
     generate_key "$META_NODE_DIR/config" "observerKey_metachain.pem"
 
-    echo "===== Downloading data files ====="
-    local ex="tgz"
-    # download latest block DBs
-    if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-0.$ex -P $FLOAT_MOUNT_DIR
-    fi
-    if [ ! -f $FLOAT_MOUNT_DIR/node-1.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-1.$ex -P $FLOAT_MOUNT_DIR
-    fi
-    if [ ! -f $FLOAT_MOUNT_DIR/node-2.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-2.$ex -P $FLOAT_MOUNT_DIR
-    fi
-    if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/node-metachain.$ex -P $FLOAT_MOUNT_DIR
-    fi
+    download_snapshots
 
-    # extract block databases in parallel processes
-    echo "===== Extracting database files ====="
-    if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
-        tar xf $FLOAT_MOUNT_DIR/node-0.$ex -C $NODE_0_DIR &
-    fi
-    if [[ ! -d $NODE_1_DIR/db/db/1/Static || ! -d $NODE_1_DIR/db/1/Static ]]; then
-        tar xf $FLOAT_MOUNT_DIR/node-1.$ex -C $NODE_1_DIR &
-    fi
-    if [[ ! -d $NODE_2_DIR/db/db/1/Static || ! -d $NODE_2_DIR/db/1/Static ]]; then
-        tar xf $FLOAT_MOUNT_DIR/node-2.$ex -C $NODE_2_DIR &
-    fi
-    if [[ ! -d $META_NODE_DIR/db/db/1/Static || ! -d $META_NODE_DIR/db/1/Static ]]; then
-        tar xf $FLOAT_MOUNT_DIR/node-metachain.$ex -C $META_NODE_DIR &
-    fi
-    wait
+    extract_snapshots
 
 }
 
@@ -266,16 +291,16 @@ cleanup() {
 
 run_cis_hardening() {
     echo "===== Begin OS hardening ====="
-    echo "===== 1. Installing ansible ... ====="
+    echo "===== 1. Installing ansible ====="
     sudo pip3 install ansible
-    echo "===== 2. Installing git ... ====="
+    echo "===== 2. Installing git ====="
     yum -y -q install git
-    echo "===== 3. Installing nss ... ====="
+    echo "===== 3. Installing nss ====="
     yum -y -q install nss
-    echo "===== 4. Cloning repo ... ====="
+    echo "===== 4. Cloning repo ====="
     git clone https://github.com/tencentcloud-tci/terraform-tencentcloud-multiversx-node.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
-    echo "===== 5. Running ansible playbook for CIS OS hardening  ... ====="
+    echo "===== 5. Running ansible playbook for CIS OS hardening ====="
     ansible-playbook /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
     echo "===== End OS hardening ====="
 }
