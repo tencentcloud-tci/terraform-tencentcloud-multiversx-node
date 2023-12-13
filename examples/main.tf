@@ -4,7 +4,7 @@ module "multiversx-observer" {
   source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
 
   #-------basic variables
-  az            = "eu-frankfurt-1"       #availability zone to deploy
+  az            = "eu-frankfurt-1"      #availability zone to deploy
   instance_name = "mvx-observer-devnet" #name of the LH instance
   blueprint_id  = "lhbp-a7oxy3em"
 
@@ -13,7 +13,7 @@ module "multiversx-observer" {
   purchase_period = 1               #the valability of the purchase, in months
 
   #-------State specific variables
-  need_tat_commands = true      #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  need_tat_commands = true     #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
   network           = "devnet" #choose between mainnet, testnet, devnet
 
   #-------firewall details
