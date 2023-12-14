@@ -104,7 +104,7 @@ module "multiversx-observer-lite" {
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
   blueprint_id  = "lhbp-a7oxy3em" #the id of the blueprint, we recommend using OpenCloudOS8 with docker
-
+  bundle_id = "bundle_ent_lin_02" #if performance is not a concern you can also use the 'bundle2022_gen_lin_05' (2core/8GB) for testnet/devnet only 
   
   #-------State specific variables
   need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
@@ -140,7 +140,8 @@ module "multiversx-observer" {
   deployment_mode = "lite" #the deployment mode: lite, db-lookup-hdd, db-lookup-ssd
   purchase_period = 1 #the valability of the purchase, in months
   blueprint_id  = "lhbp-a7oxy3em" #the id of the blueprint, we recommend using OpenCloudOS8 with docker
-  
+  bundle_id = "bundle_ent_lin_02" #if performance is not a concern you can also use the 'bundle2022_gen_lin_05' (2core/8GB) for testnet/devnet only 
+
   #-------State specific variables
   need_tat_commands = true #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
   
