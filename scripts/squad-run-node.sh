@@ -39,6 +39,7 @@ set_docker_image_name() {
 }
 
 pull_docker_images() {
+    echo "===== Pulling docker images ====="
     set_docker_image_name
 
     local dhgenkey="https://registry.hub.docker.com/v2/repositories/multiversx/chain-keygenerator/tags"
@@ -56,6 +57,7 @@ pull_docker_images() {
     docker tag multiversx/${DOCKER_IMAGE_NODE_NAME}:$latobs multiversx/${DOCKER_IMAGE_NODE_NAME}:using
     docker pull -q multiversx/chain-squad-proxy:$latpro
     docker tag multiversx/chain-squad-proxy:$latpro multiversx/chain-squad-proxy:using
+    echo "===== ... done ====="
 }
 
 # input:
@@ -65,10 +67,11 @@ generate_key() {
     if [ -f "$1/$2" ]; then
         echo "===== Skipping key generation ====="
     else
-        echo "===== Generating key ====="
+        echo "===== Generating keys ====="
         docker run --privileged --rm --mount type=bind,source=$1,destination=/keys --workdir /keys multiversx/chain-keygenerator:using \
         && sudo chown $(whoami) $1/validatorKey.pem \
         && mv $1/validatorKey.pem $1/$2
+        echo "===== ... done ====="
     fi
 }
 
@@ -112,6 +115,7 @@ run() {
             --validator-key-pem-file=/config/observerKey_${SHARD}.pem --display-name="${DISPLAY_NAME}" \
             --operation-mode db-lookup-extension
         fi
+        echo "===== ... done ====="
     else
         echo "===== INFO: the node $SHARD is already running ====="
     fi
@@ -119,14 +123,17 @@ run() {
 
 init_env() {
     echo "===== Initialising environment ====="
+    sudo yum update -yq
     echo "===== Installing epel-release ====="
     yum -y -q install epel-release
     echo "===== Installing python / screen / tccli ====="
     yum install -y -q python3 screen
+    yum install python3.11 -yq
     python3 -m pip install pip
     pip3 install -q tccli
     pip3 install --upgrade tccli
     cp /usr/local/bin/tccli /usr/bin/
+    echo "===== ... done ====="
 
 }
 
@@ -146,12 +153,12 @@ init_dir_lite() {
 }
 
 init_env_db-lookup() {
-    echo "===== Initialising environment for db-lookup extension ====="
     echo "LH_ID=$LH_ID"
     echo "CBS_ID_0=$CBS_ID_0"
     echo "CBS_ID_1=$CBS_ID_1"
     echo "CBS_ID_2=$CBS_ID_2"
     echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
+    echo "===== ... done ====="
 }
 
 # input:
@@ -164,6 +171,7 @@ attach_and_mount() {
         else
             echo "===== Attaching $1 ====="
             tccli lighthouse AttachDisks --cli-unfold-argument --region $REGION --DiskIds $1 --InstanceId $LH_ID
+            echo "===== ... done ====="
             sleep 15
         fi
         local tmp=`ls -la /dev/disk/by-id/ |grep ${1#*-}`
@@ -172,6 +180,7 @@ attach_and_mount() {
         if [[ -n `parted -s /dev/$cbs_dev print 2>&1|grep -i error` ]]; then
             echo "===== Formatting $1 ====="
             mkfs -t ext4 /dev/$cbs_dev
+            echo "===== ... done ====="
         fi
         mkdir -p $2
         mount /dev/$cbs_dev $2
@@ -179,30 +188,31 @@ attach_and_mount() {
         if [ "$2" != "$FLOAT_MOUNT_DIR" ]; then
             echo "===== Configuring /etc/fstab for $1 ====="
             echo "/dev/disk/by-id/virtio-disk-${1#*-} $2 ext4 defaults 0 0" >> /etc/fstab
+            echo "===== ... done ====="
         fi
     else
         echo "===== INFO: $1 already mounted to $2 ====="
     fi
 }
 
-set_archive_name() {
-    case $NETWORK in
-        "mainnet")
-            ARCHIVE_NAME_="node"
-            ;;
-        "testnet")
-            ARCHIVE_NAME_="testnet-node"
-            ;;
-        "devnet")
-            ARCHIVE_NAME_="devnet-node"
-            ;;
-    esac
-}
 
 download_snapshots() {
     echo "===== Downloading block snapshots  ====="
     local ex="tgz"
-    set_archive_name
+    NETWORK={{network}}
+    # set archive name
+    case $NETWORK in
+        "mainnet")
+            ARCHIVE_NAME="node"
+            ;;
+        "testnet")
+            ARCHIVE_NAME="testnet-node"
+            ;;
+        "devnet")
+            ARCHIVE_NAME="devnet-node"
+            ;;
+    esac
+
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
         wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
@@ -216,12 +226,14 @@ download_snapshots() {
     if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
         wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
     fi
+
+    echo "===== ... done ====="
 }
 
 extract_snapshots() {
     # extract block databases in parallel processes
     echo "===== Extracting block snapshots ====="
-    set_archive_name
+    local ex="tgz"
 
     if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
         tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-0.$ex -C $NODE_0_DIR &
@@ -236,6 +248,8 @@ extract_snapshots() {
         tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-metachain.$ex -C $META_NODE_DIR &
     fi
     wait
+
+    echo "===== ... done ====="
 }
 
 
@@ -301,8 +315,9 @@ run_cis_hardening() {
     git clone https://github.com/tencentcloud-tci/terraform-tencentcloud-multiversx-node.git /home/lighthouse/source-repo/
     cd /home/lighthouse/source-repo/
     echo "===== 5. Running ansible playbook for CIS OS hardening ====="
+    export PATH=$PATH:/usr/local/bin
     ansible-playbook /home/lighthouse/source-repo/scripts/cis-hardening/cis.yml > CIS-ansible.log
-    echo "===== End OS hardening ====="
+    echo "===== ... done ====="
 }
 
 run_squad() {    
@@ -319,10 +334,14 @@ run_squad() {
     
     # init dir
     if [ "$1" == "lite" ]; then
+        echo "===== Initializing structure for Observer Lite ====="
         init_dir_lite
+        echo "===== ... done ====="
     elif [[ "$1" == "db-lookup-ssd" || "$1" == "db-lookup-hdd" ]]; then
+        echo "===== Initializing structure for Observer DB-Lookup ====="
         init_env_db-lookup
         init_dir_db-lookup
+        echo "===== ... done ====="
     else
         echo "===== ERROR: unsupported node type: $1 ====="
         exit 1
@@ -330,7 +349,9 @@ run_squad() {
 
     # create a docker network
     if [ -z $(docker network ls -q -f "name=multiversx-squad") ]; then
+        echo "===== Creating container network ====="
         docker network create --subnet=10.0.0.0/24 multiversx-squad
+        echo "===== ... done ====="
     fi
 
     # Start Observer of Shard 0
@@ -351,8 +372,10 @@ run_squad() {
 
     # Start Proxy
     if [ -z $(docker ps -q -f "name=proxy") ]; then
+        echo "===== Running proxy service ====="
         local IP=10.0.0.2
         screen -dmS proxy docker run --privileged --rm --network=multiversx-squad --ip=${IP} -p 8079:8079 --name proxy multiversx/chain-squad-proxy:using
+        echo "===== ... done ====="
     else
         echo "===== INFO: proxy service already running ====="
     fi
