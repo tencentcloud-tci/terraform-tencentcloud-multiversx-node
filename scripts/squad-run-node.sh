@@ -203,28 +203,31 @@ download_snapshots() {
     # set archive name
     case $NETWORK in
         "mainnet")
-            ARCHIVE_NAME="node"
+            ARCHIVE_NAME="Full-History-DB-Shard"
+            FOLDER_NAME="mainnet"
             ;;
         "testnet")
-            ARCHIVE_NAME="testnet-node"
+            ARCHIVE_NAME="TestNet-Full-History-DB-Shard"
+            FOLDER_NAME="testnet"
             ;;
         "devnet")
-            ARCHIVE_NAME="devnet-node"
+            ARCHIVE_NAME="DevNet-Full-History-DB-Shard"
+            FOLDER_NAME="devnet"
             ;;
     esac
 
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-1.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-1.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/$FOLDER_NAME/$ARCHIVE_NAME-1.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-2.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-2.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/$FOLDER_NAME/$ARCHIVE_NAME-2.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/$FOLDER_NAME/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
     fi
 
     echo "===== ... done ====="
