@@ -208,7 +208,6 @@ download_snapshots() {
         "mainnet")
             ARCHIVE_NAME="Full-History-DB-Shard"
             FOLDER_NAME="mainnet"
-            ex="tgz"
             ;;
         "testnet")
             ARCHIVE_NAME="TestNet-Full-History-DB-Shard"
