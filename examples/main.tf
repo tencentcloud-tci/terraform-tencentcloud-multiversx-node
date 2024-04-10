@@ -36,5 +36,5 @@ module "multiversx-observer" {
   cbs0_disk_size = 50                #disk contains node-0 and node-metachain data
   cbs1_disk_size = 50                #disk contains node-1
   cbs2_disk_size = 50                #disk contains node-2
-  floating_cbs   = "lhdisk-dzxbu4z2" #ID of the floater disk which will be used to download and extract the node DB history
+  #floating_cbs   = "lhdisk-9hmieixy" #ID of the floater disk which will be used to download and extract the node DB history
 }

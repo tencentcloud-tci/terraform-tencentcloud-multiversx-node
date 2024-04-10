@@ -76,11 +76,11 @@ variable "extra_firewall_rules" {
   default     = []
 }
 
-variable "floating_cbs" {
-  type        = string
-  description = "CBS instance for deployment"
-  default     = ""
-}
+#variable "floating_cbs" {
+#  type        = string
+#  description = "CBS instance for deployment"
+#  default     = ""
+#}
 
 variable "cbs0_disk_size" {
   type        = number
