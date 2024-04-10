@@ -40,7 +40,6 @@ resource "tencentcloud_tat_command" "node_runner" {
     "cbs_0" : "",
     "cbs_1" : "",
     "cbs_2" : ""
-    #"cbs_float" : ""
   })
 }
 
@@ -191,7 +190,6 @@ resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
     cbs_0           = ""
     cbs_1           = ""
     cbs_2           = ""
-    #cbs_float       = ""
     network         = var.network
     }) : jsonencode({
     deployment_mode = var.deployment_mode
@@ -201,7 +199,6 @@ resource "tencentcloud_tat_invocation_invoke_attachment" "run" {
     cbs_0           = resource.tencentcloud_lighthouse_disk.cbs_0[0].id
     cbs_1           = resource.tencentcloud_lighthouse_disk.cbs_1[0].id
     cbs_2           = resource.tencentcloud_lighthouse_disk.cbs_2[0].id
-    #cbs_float       = var.floating_cbs
     network         = var.network
   })
   timeout = 14400
