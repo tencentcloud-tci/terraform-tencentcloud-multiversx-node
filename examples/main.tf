@@ -1,6 +1,7 @@
 module "multiversx-observer" {
 
   #-------source repo
+  #source = "tudorpaultoma/terraform-tencentcloud-multiversx-node"
   #source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
   source = "/Users/tudortoma/Documents/Projects/terraform-tencentcloud-multiversx-node" #terraform module published in the registry
 
