@@ -5,7 +5,7 @@ module "multiversx-observer" {
   source = "/Users/tudortoma/Documents/Projects/terraform-tencentcloud-multiversx-node" #terraform module published in the registry
 
   #-------basic variables
-  az            = "eu-frankfurt-1"    #availability zone to deploy
+  az            = "eu-frankfurt-2"    #availability zone to deploy
   instance_name = "mvx-observer-test" #name of the LH instance
   blueprint_id  = "lhbp-a7oxy3em"
   bundle_id     = "bundle_ent_lin_02" #if performance is not a concern you can also use the 'bundle2022_gen_lin_05' (2core/8GB) for testnet/devnet only 

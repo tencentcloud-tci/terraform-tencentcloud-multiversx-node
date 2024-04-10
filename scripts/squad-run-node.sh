@@ -123,16 +123,20 @@ run() {
 
 init_env() {
     echo "===== Initialising environment ====="
+    echo "===== Package update ====="
     sudo yum update -yq
     echo "===== Installing epel-release ====="
     yum -y -q install epel-release
     echo "===== Installing python / screen / tccli ====="
-    yum install -y -q python3 screen
+    yum install -y -q python3
     yum install python3.11 -yq
     python3 -m pip install pip
+    echo "===== Installing tccli ====="
     pip3 install -q tccli
     pip3 install --upgrade tccli
     cp /usr/local/bin/tccli /usr/bin/
+    echo "===== Installing screen ====="
+    yum install -y -q screen
     echo "===== ... done ====="
 
 }
