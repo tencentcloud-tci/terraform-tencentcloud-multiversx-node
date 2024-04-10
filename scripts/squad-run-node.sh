@@ -12,11 +12,11 @@ DOCKER_IMAGE_NODE_NAME_FILE=$SQUAD_BASE_DIR/.node_image_name
 KEY_DIR=/data/keys
 
 REGION=`curl http://metadata.tencentyun.com/latest/meta-data/placement/region`
+ZONE=`curl http://metadata.tencentyun.com/latest/meta-data/placement/zone`
 LH_ID={{lighthouse_id}}
 CBS_ID_0={{cbs_0}}
 CBS_ID_1={{cbs_1}}
 CBS_ID_2={{cbs_2}}
-CBS_ID_FLOAT={{cbs_float}}
 NETWORK={{network}}
 
 #
@@ -123,16 +123,20 @@ run() {
 
 init_env() {
     echo "===== Initialising environment ====="
-    sudo yum update -yq
+    echo "===== Package update ====="
+    #yum update -yq
     echo "===== Installing epel-release ====="
     yum -y -q install epel-release
     echo "===== Installing python / screen / tccli ====="
-    yum install -y -q python3 screen
+    yum install -y -q python3
     yum install python3.11 -yq
     python3 -m pip install pip
+    echo "===== Installing tccli ====="
     pip3 install -q tccli
     pip3 install --upgrade tccli
     cp /usr/local/bin/tccli /usr/bin/
+    echo "===== Installing screen ====="
+    yum install -y -q screen
     echo "===== ... done ====="
 
 }
@@ -157,7 +161,6 @@ init_env_db-lookup() {
     echo "CBS_ID_0=$CBS_ID_0"
     echo "CBS_ID_1=$CBS_ID_1"
     echo "CBS_ID_2=$CBS_ID_2"
-    echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
     echo "===== ... done ====="
 }
 
@@ -198,33 +201,37 @@ attach_and_mount() {
 
 download_snapshots() {
     echo "===== Downloading block snapshots  ====="
-    local ex="tgz"
+    local ex="tar.gz"
     NETWORK={{network}}
     # set archive name
     case $NETWORK in
         "mainnet")
-            ARCHIVE_NAME="node"
+            ARCHIVE_NAME="Full-History-DB-Shard"
+            FOLDER_NAME="mainnet"
+            ex="tgz"
             ;;
         "testnet")
-            ARCHIVE_NAME="testnet-node"
+            ARCHIVE_NAME="TestNet-Full-History-DB-Shard"
+            FOLDER_NAME="testnet"
             ;;
         "devnet")
-            ARCHIVE_NAME="devnet-node"
+            ARCHIVE_NAME="DevNet-Full-History-DB-Shard"
+            FOLDER_NAME="devnet"
             ;;
     esac
 
     # download latest block DBs
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-1.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-1.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-1.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-2.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-2.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-2.$ex -P $FLOAT_MOUNT_DIR
     fi
     if [ ! -f $FLOAT_MOUNT_DIR/node-metachain.$ex ]; then
-        wget -q https://tommyxyz-1301327510.cos.eu-frankfurt.myqcloud.com/MX/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
+        wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-metachain.$ex -P $FLOAT_MOUNT_DIR
     fi
 
     echo "===== ... done ====="
@@ -233,7 +240,7 @@ download_snapshots() {
 extract_snapshots() {
     # extract block databases in parallel processes
     echo "===== Extracting block snapshots ====="
-    local ex="tgz"
+    local ex="tar.gz"
 
     if [[ ! -d $NODE_0_DIR/db/db/1/Static || ! -d $NODE_0_DIR/db/1/Static ]]; then
         tar xf $FLOAT_MOUNT_DIR/$ARCHIVE_NAME-0.$ex -C $NODE_0_DIR &
@@ -262,8 +269,21 @@ init_dir_db-lookup() {
     NODE_2_DIR=$CBS_2_DIR/node-2
     META_NODE_DIR=$CBS_0_DIR/node-metachain
 
+    # create disk floater
+    mount_config="{\"InstanceId\":\"$LH_ID\",\"MountPoint\":\"$FLOAT_MOUNT_DIR\",\"FileSystemType\":\"ext4\"}"
+    CBS_ID_FLOAT=`tccli lighthouse CreateDisks --region $REGION --Zone $ZONE \
+                                    --DiskSize 1000 --DiskType CLOUD_PREMIUM \
+                                    --DiskChargePrepaid '{"Period":1,"RenewFlag":"NOTIFY_AND_MANUAL_RENEW"}' \
+                                    --AutoMountConfiguration $mount_config \
+                                    --AutoVoucher True \
+                                    --DiskName mvx-floater | jq '.DiskIdSet[0]'`
+    CBS_ID_FLOAT="${CBS_ID_FLOAT//\"}"
+    param="[\"$CBS_ID_FLOAT\"]"
+    tccli lighthouse DescribeDisks --region $REGION --DiskIds $param --waiter "{'expr':'DiskSet[0].DiskState','to':'ATTACHED'}"
+    sleep 5 # just for safety
+    echo "CBS_ID_FLOAT=$CBS_ID_FLOAT"
+    
     # create CBS
-
     # attach and mount the disks
     # format
     echo "===== Disk attaching and formatting ====="
@@ -272,7 +292,6 @@ init_dir_db-lookup() {
     attach_and_mount $CBS_ID_0 $CBS_0_DIR
     attach_and_mount $CBS_ID_1 $CBS_1_DIR
     attach_and_mount $CBS_ID_2 $CBS_2_DIR
-    attach_and_mount $CBS_ID_FLOAT $FLOAT_MOUNT_DIR
 
 
     # copy key files
@@ -296,7 +315,13 @@ cleanup() {
     echo "===== Cleaning up ====="
     if [ "{{deployment_mode}}" != "lite" ]; then
         umount $FLOAT_MOUNT_DIR
-        tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT || true
+        rm -rf $FLOAT_MOUNT_DIR
+        tccli lighthouse DetachDisks --cli-unfold-argument --region $REGION --DiskIds $CBS_ID_FLOAT
+        param="[\"$CBS_ID_FLOAT\"]"
+        tccli lighthouse DescribeDisks --region $REGION --DiskIds $param --waiter "{'expr':'DiskSet[0].DiskState','to':'UNATTACHED'}"
+        tccli lighthouse IsolateDisks --region $REGION --DiskIds $param
+        tccli lighthouse DescribeDisks --region $REGION --DiskIds $param --waiter "{'expr':'DiskSet[0].DiskState','to':'SHUTDOWN'}"
+        tccli lighthouse TerminateDisks --region $REGION --DiskIds $param
     fi
 
     unset TENCENTCLOUD_SECRET_ID

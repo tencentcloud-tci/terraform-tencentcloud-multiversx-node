@@ -164,7 +164,6 @@ module "multiversx-observer" {
   cbs0_disk_size = 350 #disk contains node-0 and node-metachain data
   cbs1_disk_size = 450 #disk contains node-1
   cbs2_disk_size = 300 #disk contains node-2
-  floating_cbs = "lhdisk-jkx4d2w4" #ID of the floater disk which will be used to download and extract the node DB history
 }
 ```
 
@@ -180,7 +179,6 @@ A few of parameters are needed to deploy the instance
  - `ssh_client_cidr` source ip of the management location (for SSH whitelisting)
  - `need_tat_commands` set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
  - `network` choose between mainnet, testnet, devnet. This selection will switch the MultiversX network.
- - `floating_cbs` ID of the floater disk which will be used to download and extract the node DB history
  - `extra_firewall_rules` define own custom firewall inbound rule
  - `cbsX_disk_size` where X=0,1,2. this variable defines the size of the disk for the node databases
 For reference here is the [Tencent Cloud Terraform provider](https://registry.terraform.io/providers/tencentcloudstack/tencentcloud/latest/docs/resources/lighthouse_instance)
@@ -224,12 +222,11 @@ Here are some details of the supported modes:
 
 
 ### DB-lookup node type
-This node type requires an additional 3 cloud disks: cbs-0, cbs-1, cbs-2 plus one temporary disk 'cbs_float'
+This node type requires an additional 3 cloud disks: cbs-0, cbs-1, cbs-2 
 
 * cbs-0 containes the deployment of: node-0 and node-metachain
 * cbs-1 containes the deployment of: node-1
 * cbs-2 containes the deployment of: node-2
-* cbs_float is a temporary disk, used to download the block database archives. By using these archive files, we can speed up the progress of synchronization during the initial deployment. When the node deployment is done, this temporary disk will be detached from the node.
 
 | Service | Directory |
 | -- | -- |
@@ -257,7 +254,6 @@ This command is used to deploy a node.
 
 when `deployment_mode=db-lookup-hdd, db-lookup-ssd`, extra variables should be set:
 
-* `floating_cbs`: the temporary disk ID
 * `deployment_mode`: has to be one of the 2 db-lookup options
 
 
