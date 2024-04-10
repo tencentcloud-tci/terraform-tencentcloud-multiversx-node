@@ -15,7 +15,7 @@ module "multiversx-observer" {
   purchase_period = 1               #the valability of the purchase, in months
 
   #-------State specific variables
-  need_tat_commands = true     #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
+  need_tat_commands = true      #set 'false' only if the commands are already deployed (if previous/paralel deployment existed)
   network           = "mainnet" #choose between mainnet, testnet, devnet
 
   #-------firewall details
@@ -49,7 +49,7 @@ module "multiversx-observer" {
   #   - CBS1: min.500GB, safe.600GB
   #   - CBS2: min.300GB, safe.400GB
 
-  cbs0_disk_size = 50                #disk contains node-0 and node-metachain data
-  cbs1_disk_size = 50                #disk contains node-1
-  cbs2_disk_size = 50                #disk contains node-2
+  cbs0_disk_size = 50 #disk contains node-0 and node-metachain data
+  cbs1_disk_size = 50 #disk contains node-1
+  cbs2_disk_size = 50 #disk contains node-2
 }
