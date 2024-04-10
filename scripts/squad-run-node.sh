@@ -198,13 +198,14 @@ attach_and_mount() {
 
 download_snapshots() {
     echo "===== Downloading block snapshots  ====="
-    local ex="tgz"
+    local ex="tar.gz"
     NETWORK={{network}}
     # set archive name
     case $NETWORK in
         "mainnet")
             ARCHIVE_NAME="Full-History-DB-Shard"
             FOLDER_NAME="mainnet"
+            #ex="tgz"
             ;;
         "testnet")
             ARCHIVE_NAME="TestNet-Full-History-DB-Shard"
@@ -217,6 +218,7 @@ download_snapshots() {
     esac
 
     # download latest block DBs
+    echo "wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR"
     if [ ! -f $FLOAT_MOUNT_DIR/node-0.$ex ]; then
         wget -q https://multiversx-1301327510.cos.eu-frankfurt.myqcloud.com/Snapshots/$FOLDER_NAME/$ARCHIVE_NAME-0.$ex -P $FLOAT_MOUNT_DIR
     fi

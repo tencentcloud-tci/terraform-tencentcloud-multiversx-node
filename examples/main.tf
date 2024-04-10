@@ -1,11 +1,11 @@
 module "multiversx-observer" {
 
   #-------source repo
-  source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
-
+  #source = "tencentcloud-tci/multiversx-node/tencentcloud" #terraform module published in the registry
+  source = "/Users/tudortoma/Documents/Projects/terraform-tencentcloud-multiversx-node" #terraform module published in the registry
   #-------basic variables
   az            = "eu-frankfurt-1"      #availability zone to deploy
-  instance_name = "mvx-observer-devnet" #name of the LH instance
+  instance_name = "mvx-observer-test" #name of the LH instance
   blueprint_id  = "lhbp-a7oxy3em"
   bundle_id     = "bundle_ent_lin_02" #if performance is not a concern you can also use the 'bundle2022_gen_lin_05' (2core/8GB) for testnet/devnet only 
   #for more information please refer to MultiversX system requirements: https://docs.multiversx.com/validators/system-requirements
@@ -33,5 +33,5 @@ module "multiversx-observer" {
   cbs0_disk_size = 50                #disk contains node-0 and node-metachain data
   cbs1_disk_size = 50                #disk contains node-1
   cbs2_disk_size = 50                #disk contains node-2
-  floating_cbs   = "lhdisk-c0wn1l0m" #ID of the floater disk which will be used to download and extract the node DB history
+  floating_cbs   = "lhdisk-dzxbu4z2" #ID of the floater disk which will be used to download and extract the node DB history
 }
